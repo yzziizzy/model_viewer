@@ -1,3 +1,6 @@
+
+*.kate-swp
+
 # Object files
 *.o
 *.ko
@@ -29,5 +32,36 @@
 *.hex
 
 # Debug files
+*.dirstamp
 *.dSYM/
-*.su
+
+/autom4te.cache
+/aclocal.m4
+/m4
+/compile
+/configure
+/depcomp
+/install-sh
+/missing
+/stamp-h1
+/configure.scan
+Makefile.in
+Makefile
+
+.deps
+
+/config.*
+/settings.ini
+/src/glmv
+
+
+# ignore the external libs for now, i'll figure something out later for it
+/src/c3dlas
+#/src/text #merged into this project for now
+
+# these are not build files
+!/assets/**/*.obj
+
+# saved sdf font data
+*.sdf
+sdf.png
