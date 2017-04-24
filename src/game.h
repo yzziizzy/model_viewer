@@ -5,6 +5,7 @@
 #include "config.h" // UserConfig
 #include "uniformBuffer.h"
 #include "fbo.h"
+#include "timing.h"
 //#include "scene.h"
 
 
@@ -44,10 +45,7 @@ typedef struct GameSettings {
 	
 } GameSettings;
 
-typedef struct QueryQueue {
-	GLuint qids[6];
-	int head, used;
-} QueryQueue;
+
 
 
 typedef struct PerViewUniforms {

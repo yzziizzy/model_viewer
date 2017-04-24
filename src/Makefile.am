@@ -10,6 +10,7 @@ glmv_SOURCES = main.c \
 	objloader.c \
 	staticMesh.c \
 	uniformBuffer.c \
+	timing.c \
 	fbo.c \
 	window.c \
 	game.c \
