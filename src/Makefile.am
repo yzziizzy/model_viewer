@@ -7,6 +7,7 @@ glmv_SOURCES = main.c \
 	MurmurHash3.c \
 	dumpImage.c \
 	utilities.c \
+	settings.c \
 	objloader.c \
 	staticMesh.c \
 	uniformBuffer.c \

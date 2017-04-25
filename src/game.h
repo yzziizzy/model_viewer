@@ -162,6 +162,6 @@ void gameLoop(XStuff* xs, GameState* gs, InputState* is);
 
 void setGameSettings(GameSettings* g, UserConfig* u);
 
-
+void loadSettings(char* path, GameState* gs);
 
 #endif // __EACSMB_GAME_H__

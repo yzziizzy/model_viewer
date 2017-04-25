@@ -47,8 +47,11 @@ int main(int argc, char* argv[]) {
 // 		printf("failed to load settings.ini [code %d]\n",configStatus);
 // 	}
 // 	
-// 	setGameSettings(&game.settings,&game.uSettings);
 // 	
+// 	
+	loadSettings("assets/config/settings", &game);
+	setGameSettings(&game.settings,&game.uSettings);
+	
 	memset(&xs, 0, sizeof(XStuff));
 	
 	xs.targetMSAA = 4;

@@ -15,12 +15,19 @@ typedef struct StaticMeshVertex {
 
 typedef struct StaticMesh {
 	
+	// old stuff
 	// always GL_TRIANGLES
 	StaticMeshVertex* vertices;
 	int vertexCnt;
 	
 	GLuint vbo;
 	GLuint texID;
+	
+	// new stuff
+	
+	// always GL_LINES
+	GLuint wireframeVBO;
+	GLuint vertexPointsVBO;
 	
 } StaticMesh;
 

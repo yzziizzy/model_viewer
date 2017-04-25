@@ -524,7 +524,7 @@ void postFrame(GameState* gs) {
 void handleInput(GameState* gs, InputState* is) {
 	
 	double te = gs->frameSpan;
-	
+
 	float moveSpeed = gs->settings.keyScroll * te; // should load from config
 	float rotateSpeed = gs->settings.keyRotate * te; // 20.8 degrees
 	float keyZoom = gs->settings.keyZoom * te;
@@ -586,7 +586,7 @@ void handleInput(GameState* gs, InputState* is) {
 	gs->direction = fmodf(F_2PI + gs->direction, F_2PI);
 	
 	// zoom
-	if(is->keyState[52] & IS_KEYDOWN) {
+	if(is->keyState[52] & IS_KEYDOWN) { 
 		gs->zoom += keyZoom;
  		gs->zoom = fmin(gs->zoom, -10.0);
 		gs->hasMoved = 1;
@@ -661,6 +661,7 @@ void handleInput(GameState* gs, InputState* is) {
 			lastChange = gs->frameTime;
 		}
 	}
+	
 	
 }
 
@@ -923,8 +924,8 @@ void gameLoop(XStuff* xs, GameState* gs, InputState* is) {
 	//setUpView(gs);
 	updateView(xs, gs, is);
 	
-	
-	if(gs->hasMoved && gs->lastSelectionFrame < gs->frameCount - 8) {
+	// disable selection pass because intel gpus suck
+	if(0 && gs->hasMoved && gs->lastSelectionFrame < gs->frameCount - 8) {
 		printf("doing selection pass %d\n", gs->frameCount);
 		gs->hasMoved = 0;
 		gs->lastSelectionFrame = gs->frameCount; 
