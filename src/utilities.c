@@ -99,19 +99,25 @@ char* readFile(char* path, int* srcLen) {
 	return contents;
 }
 
+int getVAOItemSize(VAOConfig* item) {
+	switch(item->type) {
+		case GL_FLOAT: 
+			return 4 * item->sz; 
+		case GL_SHORT: 
+		case GL_UNSIGNED_SHORT: 
+			return 2 * item->sz; 
+		case GL_BYTE: 
+		case GL_UNSIGNED_BYTE: 
+			return 1 * item->sz; 
+		default:
+			fprintf(stderr, "Unsupported VAO type\n");
+			exit(2);
+	}
+}
 
-
-
-GLuint makeVAO(VAOConfig* details) {
+int getVAOStride(VAOConfig* details) {
 	int i; // packed data is expected
-	uintptr_t offset = 0;
 	int stride = 0;
-	GLuint vao;
-	
-	
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
 
 	for(i = 0; details[i].sz != 0; i++) {
 		int type_size = 0;
@@ -134,6 +140,22 @@ GLuint makeVAO(VAOConfig* details) {
 		
 		stride += details[i].sz * type_size;
 	}
+	
+	return stride;
+}
+
+GLuint makeVAO(VAOConfig* details) {
+	int i; // packed data is expected
+	uintptr_t offset = 0;
+	int stride;
+	GLuint vao;
+	
+	
+	stride = getVAOStride(details);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
 	
 	for(i = 0; details[i].sz != 0; i++) {
 		GLenum t;

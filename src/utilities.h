@@ -115,9 +115,11 @@ char* readFile(char* path, int* srcLen);
 typedef struct VAOConfig {
 	int sz;
 	GLenum type;
-	
+	// todo: normalization flag
 } VAOConfig;
 
+int getVAOItemSize(VAOConfig* item);
+int getVAOStride(VAOConfig* details);
 GLuint makeVAO(VAOConfig* details);
 
 

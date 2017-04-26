@@ -28,6 +28,7 @@
 #include "texture.h"
 #include "window.h"
 #include "staticMesh.h"
+#include "renderable.h"
 #include "game.h"
 // #include "scene.h"
 
@@ -48,6 +49,7 @@ TextRenderInfo* strRI;
 
 
 StaticMesh* testmesh;
+Renderable* testrenderable;
 
 // MapBlock* map;
 // TerrainBlock* terrain;
@@ -410,7 +412,9 @@ void initGame(XStuff* xs, GameState* gs) {
 	loadOBJFile("assets/models/gazebo.obj", 0, &cube);
 	//Mesh* cubem = OBJtoMesh(&cube);
 	testmesh = StaticMeshFromOBJ(&cube);
+	testrenderable = renderable_FromOBJ(&cube);
 	
+	testrenderable->scale = 150;
 
 	
 	
@@ -788,7 +792,8 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	
 	//updateView(xs, gs, is);
 
-	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
+// 	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
+	renderable_Draw(testrenderable, msGetTop(&gs->view), msGetTop(&gs->proj));
 
 
 

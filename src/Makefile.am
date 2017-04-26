@@ -4,12 +4,14 @@ bin_PROGRAMS = glmv
 
 glmv_SOURCES = main.c \
 	hash.c \
+	ds.c \
 	MurmurHash3.c \
 	dumpImage.c \
 	utilities.c \
 	settings.c \
 	objloader.c \
 	staticMesh.c \
+	renderable.c \
 	uniformBuffer.c \
 	timing.c \
 	fbo.c \
