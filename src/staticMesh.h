@@ -3,6 +3,8 @@
 
 
 
+#include "hash.h"
+#include "renderable.h"
 
 
 typedef struct StaticMeshVertex {
@@ -15,66 +17,54 @@ typedef struct StaticMeshVertex {
 
 typedef struct StaticMesh {
 	
-	// old stuff
+	char ready;
+	
 	// always GL_TRIANGLES
-	StaticMeshVertex* vertices;
+	Vector* vertices;
+	Vector* normals; // uses vertexCnt
+	int* indices;
 	int vertexCnt;
+	int faceCnt;
+	int indexCnt; // = faceCnt * 3
 	
-	GLuint vbo;
-	GLuint texID;
+	int* edges; // indices into vertices
+	int edgeCnt;
 	
-	// new stuff
+	HashTable* edgeLookup;
 	
-	// always GL_LINES
-	GLuint wireframeVBO;
-	GLuint vertexPointsVBO;
+	// adjacency info
+	int* triAdjacency; // uses faceCnt;
+	
+	// vertex-vertex adj
+	// vertex-tri adj
+	// edge-edge adj
+	
+	Renderable* solid;
+	Renderable* wireframe;
+	Renderable* points;
+	
+	char showSolid;
+	char showWireframe;
+	char showPoints;
+	
+	Vector pos;
+	Vector raxis;
+	float rtheta;
+	float scale;
+	
+	Matrix composed;
 	
 } StaticMesh;
 
 
-typedef struct StaticMeshInstance {
-	Vector pos;
-	Vector dir;
-	Vector scale;
-	// alpha, glow, blink
-} StaticMeshInstance;
 
-struct buf_info {
-	int alloc, cnt;
-	int vertex_offset; // inda just crammed in here for now
-};
-
-
-
-typedef struct MeshManager {
-	
-	StaticMesh** meshes;
-	int meshes_alloc;
-	int meshes_cnt;
-	int totalVertices;
-	int totalInstances;
-	
-	StaticMeshInstance** instances;
-	struct buf_info* inst_buf_info;
-	
-	int activePosVBO;
-	// need a sync object
-	GLuint instVBO;
-	GLuint geomVBO;
-	
-} MeshManager;
-
+StaticMesh* staticMesh_Create();
+void staticMesh_Destroy(StaticMesh** sm);
 
 void initStaticMeshes();
 StaticMesh* StaticMeshFromOBJ(OBJContents* obj);
 
 void drawStaticMesh(StaticMesh* m, Matrix* view, Matrix* proj);
 
-MeshManager* meshManager_alloc();
-void meshManager_draw(MeshManager* mm, Matrix* view, Matrix* proj);
-int meshManager_addMesh(MeshManager* mm, StaticMesh* sm);
-int meshManager_addInstance(MeshManager* mm, int meshIndex, const StaticMeshInstance* smi);
-void meshManager_updateGeometry(MeshManager* mm);
-void meshManager_updateInstances(MeshManager* mm);
 
 #endif // __EACSMB_STATICMESH_H__

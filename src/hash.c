@@ -12,9 +12,11 @@
 #define MURMUR_SEED 718281828
 
  
-static uint64_t hash_key(char* key, size_t len);
-static size_t find_bucket(HashTable* obj, uint64_t hash, char* key);
- 
+static size_t find_bucket(HashTable* obj, uint64_t hash, void* key);
+int HT_CStringCompareFn(void* a, void* b);
+
+
+
  
 HashTable* HT_create(int allocPOT) {
 	
@@ -26,6 +28,8 @@ HashTable* HT_create(int allocPOT) {
 	obj = malloc(sizeof(*obj));
 	if(!obj) return NULL;
 	
+	obj->hashFn = &HT_CStringHashFn;
+	obj->keyCompareFn = &HT_CStringCompareFn;
 	obj->fill = 0;
 	obj->alloc_size = 1 << pot;
 	obj->grow_ratio = 0.75f;
@@ -35,6 +39,17 @@ HashTable* HT_create(int allocPOT) {
 		free(obj);
 		return NULL;
 	}
+	
+	return obj;
+}
+
+
+HashTable* HT_createCustom(int allocPOT, hashFn_t hashFn, keyCompareFn_t keyCompareFn) {
+	HashTable* obj;
+	
+	obj = HT_create(allocPOT);
+	obj->hashFn = hashFn;
+	obj->keyCompareFn = keyCompareFn;
 	
 	return obj;
 }
@@ -58,9 +73,8 @@ void HT_destroy(HashTable* obj, int free_values_too) {
 }
 
 
-
 // uses a truncated 128bit murmur3 hash
-static uint64_t hash_key(char* key, size_t len) {
+uint64_t HT_HashFn(void* key, size_t len) {
 	uint64_t hash[2];
 	
 	// len is optional
@@ -71,7 +85,15 @@ static uint64_t hash_key(char* key, size_t len) {
 	return hash[0];
 }
 
-static size_t find_bucket(HashTable* obj, uint64_t hash, char* key) {
+uint64_t HT_CStringHashFn(void* key) {
+	return hash_key(key, -1);
+}
+
+int HT_CStringCompareFn(void* a, void* b) {
+	return strcmp(a, b);
+}
+
+static size_t find_bucket(HashTable* obj, uint64_t hash, void* key) {
 	size_t startBucket, bi;
 	
 	bi = startBucket = hash % obj->alloc_size; 
@@ -87,7 +109,7 @@ static size_t find_bucket(HashTable* obj, uint64_t hash, char* key) {
 		}
 		
 		if(bucket->hash == hash) {
-			if(!strcmp(key, bucket->key)) {
+			if(!(*obj->keyCompareFn)(key, bucket->key)) {
 				// bucket is the right one and contains a value already
 				return bi;
 			}
@@ -138,11 +160,11 @@ int HT_resize(HashTable* obj, int newSize) {
 // TODO: better return values and missing key handling
 // returns 0 if val is set to the value
 // *val == NULL && return > 0  means the key was not found;
-int HT_get(HashTable* obj, char* key, void** val) {
+int HT_get(HashTable* obj, void* key, void** val) {
 	uint64_t hash;
 	size_t bi;
 	
-	hash = hash_key(key, -1);
+	hash = (*obj->hashFn)(key);
 	
 	bi = find_bucket(obj, hash, key);
 	if(bi < 0) return 1;
@@ -152,7 +174,7 @@ int HT_get(HashTable* obj, char* key, void** val) {
 }
 
 // zero for success
-int HT_set(HashTable* obj, char* key, void* val) {
+int HT_set(HashTable* obj, void* key, void* val) {
 	uint64_t hash;
 	size_t bi;
 	
@@ -161,7 +183,7 @@ int HT_set(HashTable* obj, char* key, void* val) {
 		HT_resize(obj, obj->alloc_size * 2);
 	}
 	
-	hash = hash_key(key, -1);
+	hash = (*obj->hashFn)(key);
 	
 	bi = find_bucket(obj, hash, key);
 	if(bi < 0) return 1;
@@ -181,7 +203,7 @@ int HT_set(HashTable* obj, char* key, void* val) {
 }
 
 // zero for success
-int HT_delete(HashTable* obj, char* key) {
+int HT_delete(HashTable* obj, void* key) {
 	uint64_t hash;
 	size_t bi, empty_bi, nat_bi;
 	
@@ -194,7 +216,7 @@ int HT_delete(HashTable* obj, char* key) {
 		alloc_size = obj->alloc_size;
 	}
 	*/
-	hash = hash_key(key, -1);
+	hash = (*obj->hashFn)(key);
 	bi = find_bucket(obj, hash, key);
 	
 	// if there's a key, work until an empty bucket is found
@@ -242,7 +264,7 @@ int HT_delete(HashTable* obj, char* key) {
 // iteration. no order. results undefined if modified while iterating
 // returns 0 when there is none left
 // set iter to NULL to start
-int HT_next(HashTable* obj, void** iter, char** key, void** value) { 
+int HT_next(HashTable* obj, void** iter, void** key, void** value) { 
 	struct hash_bucket* b = *iter;
 	
 	// a tiny bit of idiot-proofing
