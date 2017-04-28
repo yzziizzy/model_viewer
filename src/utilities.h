@@ -34,6 +34,13 @@
 })
 
 
+#define CHECK_OOM(p) \
+if(!p) { \
+	fprintf(stderr, "OOM for %s at %s:%s. Buy more ram\n", #p, __FILE__, __LINE__); \
+	exit(2); \
+}
+
+
 
 #define LIST(x) \
 	struct x; \

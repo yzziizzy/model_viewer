@@ -22,7 +22,7 @@ typedef struct StaticMesh {
 	// always GL_TRIANGLES
 	Vector* vertices;
 	Vector* normals; // uses vertexCnt
-	int* indices;
+	uint32_t* indices;
 	int vertexCnt;
 	int faceCnt;
 	int indexCnt; // = faceCnt * 3
