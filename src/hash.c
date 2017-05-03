@@ -86,7 +86,7 @@ uint64_t HT_HashFn(void* key, size_t len) {
 }
 
 uint64_t HT_CStringHashFn(void* key) {
-	return hash_key(key, -1);
+	return HT_HashFn(key, -1);
 }
 
 int HT_CStringCompareFn(void* a, void* b) {
@@ -169,7 +169,7 @@ int HT_get(HashTable* obj, void* key, void** val) {
 	bi = find_bucket(obj, hash, key);
 	if(bi < 0) return 1;
 	
-	*val = obj->buckets[bi].value; 
+	if(val) *val = obj->buckets[bi].value; 
 	return 0;
 }
 

@@ -61,6 +61,8 @@ typedef struct StaticMesh {
 StaticMesh* staticMesh_Create();
 void staticMesh_Destroy(StaticMesh** sm);
 
+void staticMesh_RegenMeta(StaticMesh* sm);
+
 void initStaticMeshes();
 StaticMesh* StaticMeshFromOBJ(OBJContents* obj);
 

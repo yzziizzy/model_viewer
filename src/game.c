@@ -379,7 +379,7 @@ void initGame(XStuff* xs, GameState* gs) {
 	gs->lookCenter.y = 128;
 	
 	
-	initStaticMeshes();
+	//initStaticMeshes();
 	
 	// initialize all those magic globals
 // 	initMap(&gs->map);
@@ -411,7 +411,8 @@ void initGame(XStuff* xs, GameState* gs) {
 	OBJContents cube;
 	loadOBJFile("assets/models/gazebo.obj", 0, &cube);
 	//Mesh* cubem = OBJtoMesh(&cube);
-	testmesh = StaticMeshFromOBJ(&cube);
+	testmesh = staticMesh_FromOBJ(&cube);
+	staticMesh_RegenMeta(testmesh);
 	testrenderable = renderable_FromOBJ(&cube);
 	
 	testrenderable->scale = 150;

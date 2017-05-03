@@ -22,6 +22,12 @@ typedef struct OBJContents {
 	OBJVertex* faces;
 	int faceCnt;
 	
+	// always converted to GL_TRIANGLES
+	int indexCnt;
+	int* indices;
+	int vertexCnt;
+	OBJVertex* vertices;
+	
 	char* o;
 } OBJContents;
 

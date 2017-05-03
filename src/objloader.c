@@ -13,6 +13,8 @@
 #include "c3dlas/c3dlas.h"
 #include "c3dlas/meshgen.h"
 
+#include "hash.h"
+
 #include "utilities.h"
 #include "objloader.h"
 
@@ -77,6 +79,22 @@ int parseFaceVertex(char** s, int* info) {
 }
 
 
+static uint64_t vertexLookupHash(void* key) {
+	return HT_HashFn(key, sizeof(OBJVertex));
+}
+
+static int vertexLookupCmp(void* a, void* b) {
+	return memcmp(a, b, sizeof(OBJVertex));
+}
+
+static inline uint64_t makeEdgeKey(uint32_t a, uint32_t b) {
+	return MIN(a, b) | MAX(a, b) << 32; 
+}
+
+
+
+
+
 
 void loadOBJFile(char* path, int four_d_verts, OBJContents* contents) {
 	
@@ -100,7 +118,7 @@ void loadOBJFile(char* path, int four_d_verts, OBJContents* contents) {
 	int numTexCoords = 0;
 	int numFaces = 0;
 	
-
+	// calculate how much storage is needed
 	f = raw;
 	while(*f) {
 		char c;
@@ -146,23 +164,31 @@ void loadOBJFile(char* path, int four_d_verts, OBJContents* contents) {
 	printf("TexCoords: %d\n", numTexCoords);
 	printf("Faces: %d\n", numFaces);
 	
+	
+	HashTable* vertexLookup;
+	vertexLookup = HT_createCustom(4, vertexLookupHash, vertexLookupCmp);
+	
 	Vector* vertices;
 	Vector* normals;
 	Vector2* texCoords;
 	OBJVertex* faces;
+	int* indices;
 	
 	int vc = 0;
 	int nc = 0;
 	int tc = 0;
 	int fc = 0;
+	int ic = 0;
 	
-	vertices = malloc(numVertices * sizeof(Vector));
-	normals = malloc(numNormals * sizeof(Vector));
-	texCoords = malloc(numTexCoords * sizeof(Vector2));
+	vertices = malloc(numVertices * sizeof(*vertices));
+	normals = malloc(numNormals * sizeof(*normals));
+	texCoords = malloc(numTexCoords * sizeof(*texCoords));
 	// double the size in case of quads
-	faces = malloc(numFaces * 6 * sizeof(OBJVertex));
+	faces = malloc(numFaces * 6 * sizeof(*faces));
+	indices = malloc(numFaces * 3 * sizeof(*indices));
 	
 	
+	// read the actual data
 	f = raw;
 	while(*f) {
 		char c;
@@ -202,8 +228,9 @@ void loadOBJFile(char* path, int four_d_verts, OBJContents* contents) {
 					fd[1][0], fd[1][1], fd[1][2], fd[1][3],
 					fd[2][0], fd[2][1], fd[2][2], fd[2][3]);
 				*/
-					   
+				
 				//printf("fc %d %d\n", fc, fd[0][0]);
+				//indices[ic++] = fd[0][];
 				vCopy(  &vertices[fd[0][0]-1], &faces[fc].v);
 				vCopy2(&texCoords[fd[0][1]-1], &faces[fc].t);
 				vCopy(   &normals[fd[0][2]-1], &faces[fc].n);
@@ -295,6 +322,8 @@ void loadOBJFile(char* path, int four_d_verts, OBJContents* contents) {
 	
 	contents->faces = faces;
 	contents->faceCnt = fc  > 0 ? fc / 3 : 0;
+	
+	contents->indexCnt = fc;
 }
 
 
