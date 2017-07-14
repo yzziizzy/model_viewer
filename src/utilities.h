@@ -35,26 +35,17 @@
 
 
 #define CHECK_OOM(p) \
-if(!p) { \
+if(!(p)) { \
 	fprintf(stderr, "OOM for %s at %s:%d. Buy more ram\n", #p, __FILE__, __LINE__); \
 	exit(2); \
 }
 
+#define GOTO_OOM(p, label) \
+if(!(p)) { \
+	fprintf(stderr, "OOM for %s at %s:%d. Buy more ram\n", #p, __FILE__, __LINE__); \
+	goto label; \
+}
 
-
-#define LIST(x) \
-	struct x; \
-	typedef struct x##List { \
-		struct x* d; \
-		struct x##List* next; \
-	} x##List;
-
-#define LISTU(x) \
-	union x; \
-	typedef struct x##List { \
-		union x* d; \
-		struct x##List* next; \
-	} x##List;
 
 
 #ifndef NO_TERM_COLORS
@@ -79,33 +70,6 @@ if(!p) { \
 	#define TERM_BK_GRAY       "\x1b[47m"
 #else
 #endif
-
-
-// 128 bits to fill one slot of an aligned allocation for SSE 
-struct array_info {
-	uint32_t alloc_cnt;
-	uint32_t next_index;
-	
-	uint64_t unused;
-};
-
-
-// get the array info struct
-#define ar_info(ar) (&(((struct array_info*)(ar))[-1]))
-
-
-#define ar_hasRoom(ar, n) (ar_info(ar)->next_index + n < ar_info(ar)->alloc_cnt)
-#define ar_append(ar, x) do{ if(ar_hasRoom(ar)) { ar[ar_info(ar)->next_index++] = (x); } }while(0)
-#define ar_append_direct(ar, x) do{ (ar)[ar_info(ar)->next_index++] = (x); }while(0)
-#define ar_remove(ar)  do{ if(ar_info(ar)->next_index > 0) { ar_info(ar)->next_index--; } }while(0)
-#define ar_tail(ar) (ar[ar_info(ar)->next_index])
-
-#define ar_alloc(ar, cnt) (ar_alloc_internal((ar), sizeof(*(ar)), cnt)) 
-
-void* ar_alloc_internal(void* ar, int sz, int cnt);
-
-
-
 
 
 
@@ -142,5 +106,7 @@ size_t strlnlen(const char* s);
 char* strlndup(const char* s);
 int   strlinecnt(const char* s);
 char* pathJoin(const char* a, const char* b); 
+
+void skipWhitespace(char** s);
 
 #endif // __EACSMB_UTILITIES_H__

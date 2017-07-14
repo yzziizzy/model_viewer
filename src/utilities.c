@@ -183,19 +183,6 @@ GLuint makeVAO(VAOConfig* details) {
 }
 
 
-void* ar_alloc_internal(void* ar, int sz, int cnt) {
-	struct array_info* ar1;
-	
-	// TODO: aligned allocation options
-	ar1 = realloc(ar, sz * cnt + sizeof(struct array_info)); 
-	
-	ar1[0].alloc_cnt = cnt;
-	ar1[0].next_index = 0;
-	
-	return ar1 + 1;
-}
-
-
 float fclamp(float val, float min, float max) {
 	return fmin(max, fmax(min, val));
 }
@@ -258,5 +245,19 @@ char* pathJoin(const char* a, const char* b) {
 	o[alen + blen + 1] = 0; 
 	
 	return o;
+}
+
+
+void skipWhitespace(char** s) {
+	char* e;
+	e = *s + strspn(*s, " \n\t\r\v");
+	
+	if(e) {
+		*s = e;
+		return;
+	}
+	
+	// no whitespace until the end of the string
+	*s = *s + strlen(*s);
 }
 
