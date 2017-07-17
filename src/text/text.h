@@ -1,3 +1,6 @@
+#ifndef __C_OPENGL_TEXT_H__
+#define __C_OPENGL_TEXT_H__
+
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -96,5 +99,5 @@ TextRes* GenerateSDFFont(char* fontName, int size, char* chars);
 
 
 
-
+#endif // __C_OPENGL_TEXT_H__
 

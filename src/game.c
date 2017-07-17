@@ -27,6 +27,7 @@
 #include "shader.h"
 #include "texture.h"
 #include "window.h"
+#include "gui.h"
 #include "staticMesh.h"
 #include "renderable.h"
 #include "game.h"
@@ -48,6 +49,7 @@ ShaderProgram* textProg;
 Matrix textProj, textModel;
 TextRenderInfo* strRI;
 
+GUIText* gt;
 
 StaticMesh* testmesh;
 Renderable* testrenderable;
@@ -407,6 +409,10 @@ void initGame(XStuff* xs, GameState* gs) {
 	
 	// text rendering stuff
 	
+	gui_Init();
+	gt = guiTextNew("gui!", NULL, 6.0f, "Arial");
+	
+	/*
 	arialsdf = LoadSDFFont("arial.sdf");
 	if(arialsdf == NULL) {
 		arialsdf = GenerateSDFFont("Arial", 16, NULL);
@@ -424,6 +430,7 @@ void initGame(XStuff* xs, GameState* gs) {
 	
 	//strRI = prepareText(arial, "FPS: --", -1, colors);
 	strRI = prepareText(arialsdf, "FPS: --", -1, colors);
+	*/
 	
 	axes_Init();
 	
@@ -495,8 +502,8 @@ void preFrame(GameState* gs) {
 		
 		//printf("--->%s\n", frameCounterBuf);
 		
-		updateText(strRI, frameCounterBuf, -1, fpsColors);
-		
+	//	updateText(strRI, frameCounterBuf, -1, fpsColors);
+		guiTextSetValue(gt, frameCounterBuf);
 		lastPoint = now;
 	}
 	
@@ -816,8 +823,11 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	renderable_Draw(testrenderable, msGetTop(&gs->view), msGetTop(&gs->proj));
 
 
+	guiTextRender(gt, gs);
 
+	return;
 	
+	/*
 	glUseProgram(textProg->id);
 	
 	
@@ -858,7 +868,7 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	glexit("text vbo bind");
 	glDrawArrays(GL_TRIANGLES, 0, strRI->vertexCnt);
 	glexit("text drawing");
-	
+	*/
 }
 
 

@@ -131,7 +131,7 @@ Renderable* renderable_FromOBJ(OBJContents* obj) {
 		// per vertex
 		{3, GL_FLOAT}, // position
 		{3, GL_FLOAT}, // normal
-		{2, GL_UNSIGNED_SHORT}, // tex
+		{2, GL_UNSIGNED_SHORT, GL_TRUE}, // tex
 		
 		{0, 0}
 	};
@@ -144,8 +144,11 @@ Renderable* renderable_FromOBJ(OBJContents* obj) {
 		vCopy(&obj->faces[i].v, &vertices[i].v);
 		vCopy(&obj->faces[i].n, &vertices[i].n);
 		
-		vertices[i].t.u = obj->faces[i].t.x * 65535;
-		vertices[i].t.v = obj->faces[i].t.y * 65535;
+		vertices[i].t.u = obj->faces[i].t.x * 65536;
+		vertices[i].t.v = obj->faces[i].t.y * 65536;
+		
+		//printf("texcoord: [%f, %f] -> [%d, %d]\n",obj->faces[i].t.x, obj->faces[i].t.y, vertices[i].t.u,vertices[i].t.v );
+	
 	}
 	
 	return renderable_Create(

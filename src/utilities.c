@@ -166,6 +166,10 @@ GLuint makeVAO(VAOConfig* details) {
 		if(t == GL_FLOAT) { // works only for my usage
 			glVertexAttribFormat(i, details[i].sz, t, GL_FALSE, (void*)offset);
 		}
+		else if(details[i].normalize) {
+			glVertexAttribFormat(i, details[i].sz, t, GL_TRUE, (void*)offset);
+			glexit("");
+		}
 		else {
 			glVertexAttribIFormat(i, details[i].sz, t, (void*)offset);
 		}

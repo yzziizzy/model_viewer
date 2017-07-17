@@ -16,6 +16,7 @@ glmv_SOURCES = main.c \
 	timing.c \
 	fbo.c \
 	window.c \
+	gui.c \
 	game.c \
 	shader.c \
 	texture.c \

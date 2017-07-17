@@ -86,7 +86,7 @@ char* readFile(char* path, int* srcLen);
 typedef struct VAOConfig {
 	int sz;
 	GLenum type;
-	// todo: normalization flag
+	char normalize;
 } VAOConfig;
 
 int getVAOItemSize(VAOConfig* item);
