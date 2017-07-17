@@ -40,11 +40,13 @@ uniform vec4 color;
 
 layout(location = 0) out vec4 out_Color;
 layout(location = 1) out vec4 out_Normal;
+//layout(location = 2) out vec4 out_Lighting;
 
 
 void main(void) {
 	
 	out_Color = vec4(vs_tex.xy, 0, 1); //vs_norm;
 	out_Normal = vs_norm;
+//	out_Lighting = vec4(0.5, 0.5, 1, 1);
 }
 

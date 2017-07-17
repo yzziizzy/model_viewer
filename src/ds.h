@@ -23,10 +23,12 @@ do { \
 
 
 // helpers
-#define VEC_LEN(x) (x)->len
-#define VEC_ALLOC(x) (x)->alloc
-#define VEC_DATA(x) (x)->data
+#define VEC_LEN(x) ((x)->len)
+#define VEC_ALLOC(x) ((x)->alloc)
+#define VEC_DATA(x) ((x)->data)
 
+#define VEC_TAIL(x) (VEC_DATA(x)[VEC_LEN(x)])
+#define VEC_HEAD(x) (VEC_DATA(x)[0])
 //  
 
 #define VEC_GROW(x) vec_resize(&VEC_DATA(x), &VEC_ALLOC(x), sizeof(*VEC_DATA(x)))
@@ -41,12 +43,23 @@ do { \
 
 
 // operations
+
+// increase size and assign the new entry
 #define VEC_PUSH(x, e) \
 do { \
 	VEC_CHECK(x); \
 	VEC_DATA(x)[VEC_LEN(x)] = (e); \
 	VEC_LEN(x)++; \
 } while(0)
+
+// increase size but don't assign
+#define VEC_INC(x) \
+do { \
+	VEC_CHECK(x); \
+	VEC_LEN(x)++; \
+} while(0)
+
+
 
 #define VEC_PEEK(x) VEC_DATA(x)[VEC_LEN(x) - 1]
 
@@ -65,6 +78,10 @@ do { \
 	VEC_LEN(x) = 0; \
 	VEC_ALLOC(x) = 0; \
 } while(0)
+
+
+
+
 
 
 

@@ -1,3 +1,7 @@
+#ifndef __texture_h__
+#define __texture_h__
+
+
 
 
 typedef struct {
@@ -38,3 +42,4 @@ TexArray* loadTexArray(char** files);
 
 
 
+#endif // __texture_h__

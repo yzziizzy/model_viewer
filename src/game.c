@@ -32,6 +32,7 @@
 #include "game.h"
 // #include "scene.h"
 
+#include "axes.h"
 
 
 GLuint proj_ul, view_ul, model_ul;
@@ -127,9 +128,12 @@ void setupFBOs(GameState* gs, int resized) {
 	int ww = gs->screen.wh.x;
 	int wh = gs->screen.wh.y;
 	
+	printf("creating fbos\n");
+	
 	if(gs->fboTextures) {
 		destroyFBOTextures(gs->fboTextures);
 		free(gs->fboTextures);
+		printf("destryed old fbos\n");
 	}
 	
 	json_file_t* jsf = json_load_path("assets/config/fbo.json");
@@ -195,7 +199,7 @@ void setupFBOs(GameState* gs, int resized) {
 	FBOConfig gbufConf[] = {
 		{GL_COLOR_ATTACHMENT0, gs->diffuseTexBuffer },
 		{GL_COLOR_ATTACHMENT1, gs->normalTexBuffer },
-		{GL_COLOR_ATTACHMENT2, gs->lightingTexBuffer },
+//		{GL_COLOR_ATTACHMENT2, gs->lightingTexBuffer },
 		{GL_DEPTH_ATTACHMENT, gs->depthTexBuffer },
 		{0,0}
 	};
@@ -262,6 +266,8 @@ void setupFBOs(GameState* gs, int resized) {
 	if(gs->selectionData) free(gs->selectionData);
 	printf("seldata size %d\n", ww * wh * 4);
 	gs->selectionData = malloc(ww * wh * 4);
+	
+	printf("done creating fbos\n");
 }
 
 void initGame(XStuff* xs, GameState* gs) {
@@ -308,20 +314,25 @@ void initGame(XStuff* xs, GameState* gs) {
 	
 	setupFBOs(gs, 0);
 
+
+	
 	glBindTexture(GL_TEXTURE_2D, 0);
 	
-	printf("diffuse2: %d\n",gs->diffuseTexBuffer);
 	// set up the Geometry Buffer
 
 	
 	shadingProg = loadCombinedProgram("shading");
+	glexit("");
+	printf("loaded shading prog\n");
+	glUseProgram(shadingProg->id);
+	glUniform1i(glGetUniformLocation(shadingProg->id, "sDiffuse"), 0);
+	glUniform1i(glGetUniformLocation(shadingProg->id, "sNormals"), 1);
+	glUniform1i(glGetUniformLocation(shadingProg->id, "sDepth"), 2);
+ 	glUniform1i(glGetUniformLocation(shadingProg->id, "sSelection"), 3);
+ 	glUniform1i(glGetUniformLocation(shadingProg->id, "sLighting"), 4);
 	
-	glProgramUniform1i(shadingProg->id, glGetUniformLocation(shadingProg->id, "sDiffuse"), 0);
-	glProgramUniform1i(shadingProg->id, glGetUniformLocation(shadingProg->id, "sNormals"), 1);
-	glProgramUniform1i(shadingProg->id, glGetUniformLocation(shadingProg->id, "sDepth"), 2);
- 	glProgramUniform1i(shadingProg->id, glGetUniformLocation(shadingProg->id, "sSelection"), 3);
- 	glProgramUniform1i(shadingProg->id, glGetUniformLocation(shadingProg->id, "sLighting"), 4);
-	
+	glexit("");
+	printf("set buffs\n");
 	initFSQuad();
 	
 	// check some prerequisites
@@ -333,15 +344,15 @@ void initGame(XStuff* xs, GameState* gs) {
 // 		exit(3);
 // 	};
 
-	getPrintGLEnum(GL_MAX_COLOR_ATTACHMENTS, "meh");
+//	getPrintGLEnum(GL_MAX_COLOR_ATTACHMENTS, "meh");
 	getPrintGLEnum(GL_MAX_DRAW_BUFFERS, "meh");
-	getPrintGLEnum(GL_MAX_FRAMEBUFFER_WIDTH, "meh");
-	getPrintGLEnum(GL_MAX_FRAMEBUFFER_HEIGHT, "meh");
-	getPrintGLEnum(GL_MAX_FRAMEBUFFER_LAYERS, "meh");
-	getPrintGLEnum(GL_MAX_FRAMEBUFFER_SAMPLES, "meh");
+//	getPrintGLEnum(GL_MAX_FRAMEBUFFER_WIDTH, "meh");
+//	getPrintGLEnum(GL_MAX_FRAMEBUFFER_HEIGHT, "meh");
+//	getPrintGLEnum(GL_MAX_FRAMEBUFFER_LAYERS, "meh");
+//	getPrintGLEnum(GL_MAX_FRAMEBUFFER_SAMPLES, "meh");
 	getPrintGLEnum(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, "meh");
-	getPrintGLEnum(GL_MAX_TESS_EVALUATION_TEXTURE_IMAGE_UNITS, "meh");
-	getPrintGLEnum(GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS, "meh");
+	//getPrintGLEnum(GL_MAX_TESS_EVALUATION_TEXTURE_IMAGE_UNITS, "meh");
+	//getPrintGLEnum(GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS, "meh");
 	getPrintGLEnum(GL_MAX_TEXTURE_IMAGE_UNITS, "meh");
 	getPrintGLEnum(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, "meh");
 	getPrintGLEnum(GL_MAX_ARRAY_TEXTURE_LAYERS, "meh");
@@ -351,6 +362,7 @@ void initGame(XStuff* xs, GameState* gs) {
 	getPrintGLEnum(GL_MAX_PROGRAM_TEXEL_OFFSET, "meh");
 	getPrintGLEnum(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, "meh");
 	getPrintGLEnum(GL_MAX_UNIFORM_BLOCK_SIZE, "meh");
+	glexit("");
 	
 	query_queue_init(&gs->queries.draw);
 	
@@ -387,6 +399,12 @@ void initGame(XStuff* xs, GameState* gs) {
 	
 // 	initUI(gs);
 	
+		// maye intel needs this
+	printf("gbuf init id: %d\n", gs->gbuf.fb);
+	glexit("");
+	//glBindFramebuffer(GL_FRAMEBUFFER, gs->gbuf.fb);
+	glexit("fbo preinit");
+	
 	// text rendering stuff
 	
 	arialsdf = LoadSDFFont("arial.sdf");
@@ -397,7 +415,7 @@ void initGame(XStuff* xs, GameState* gs) {
 	//arial = LoadFont("Arial", 32, NULL);
 	glerr("clearing before text program load");
 	textProg = loadCombinedProgram("textSDF");
-	
+	printf("text prog %d\n", textProg->id);
 	unsigned int colors[] = {
 		0xFF0000FF, 2,
 		0x00FF00FF, 4,
@@ -407,6 +425,7 @@ void initGame(XStuff* xs, GameState* gs) {
 	//strRI = prepareText(arial, "FPS: --", -1, colors);
 	strRI = prepareText(arialsdf, "FPS: --", -1, colors);
 	
+	axes_Init();
 	
 	OBJContents cube;
 	loadOBJFile("assets/models/gazebo.obj", 0, &cube);
@@ -416,8 +435,8 @@ void initGame(XStuff* xs, GameState* gs) {
 	testrenderable = renderable_FromOBJ(&cube);
 	
 	testrenderable->scale = 150;
-
 	
+	int axisindex = axes_Add(10, NULL);
 	
 }
 
@@ -872,7 +891,11 @@ void shadingPass(GameState* gs) {
 	
 	glexit("shading samplers");
 	
-	glUniformMatrix4fv(glGetUniformLocation(shadingProg->id, "world"), 1, GL_FALSE, world.m);
+// 	glUniformMatrix4fv(glGetUniformLocation(shadingProg->id, "world"), 1, GL_FALSE, world.m);
+// 	glexit("shading world");
+// msGetTop(&gs->view), 
+	glUniformMatrix4fv(glGetUniformLocation(shadingProg->id, "mViewProj"), 1, GL_FALSE, msGetTop(&gs->proj)->m);
+	glUniformMatrix4fv(glGetUniformLocation(shadingProg->id, "mWorldView"), 1, GL_FALSE, msGetTop(&gs->view)->m);
 	glexit("shading world");
 
 	//glUniform3fv(glGetUniformLocation(shadingProg->id, "sunNormal"), 1, (float*)&gs->sunNormal);
@@ -910,6 +933,7 @@ void checkResize(XStuff* xs, GameState* gs) {
 		setupFBOs(gs, 1);
 		
 		printf("diffuse2: %d\n",gs->diffuseTexBuffer);
+		printf("resize finished\n");
 	}
 }
 

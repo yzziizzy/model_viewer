@@ -20,6 +20,7 @@ glmv_SOURCES = main.c \
 	shader.c \
 	texture.c \
 	json_gl.c \
+	axes.c \
 	c_json/json.c \
 	c3dlas/c3dlas.c \
 	c3dlas/meshgen.c \
