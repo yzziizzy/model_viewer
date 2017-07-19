@@ -43,7 +43,7 @@ typedef struct {
 	uint16_t indexLen;
 	uint16_t* offsets;  // texture offsets
 	uint8_t* kerning;
-	uint8_t* valign; // vertical offset for gutters
+	int16_t* valign; // vertical offset for gutters
 	uint16_t* charWidths; // quad widths
 	
 	uint16_t maxWidth, maxHeight;
