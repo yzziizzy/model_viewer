@@ -153,7 +153,7 @@ TextRes* LoadFont(char* fontName, int size, char* chars) {
 */
 		
 		width += f2f(slot->metrics.width);
-		h_above = MAX(h_above, slot->metrics.horiBearingY >> 6);
+		h_above = MAX(h_above, (unsigned)slot->metrics.horiBearingY >> 6);
 		h_below = MAX(h_below, ymin);
 	}
 	
@@ -173,10 +173,10 @@ TextRes* LoadFont(char* fontName, int size, char* chars) {
 	res->texHeight = height; // may not always just be one row
 	
 	
-	res->texture = (unsigned char*)calloc(width * height, 1);
-	res->offsets = (unsigned short*)calloc(charlen * sizeof(unsigned short), 1);
-	res->charWidths = (unsigned short*)calloc(charlen * sizeof(unsigned short), 1);
-	res->valign = (unsigned char*)calloc(charlen * sizeof(unsigned char), 1);
+	res->texture = calloc(width * height * sizeof(*res->texture), 1);
+	res->offsets = calloc(charlen * sizeof(*res->offsets), 1);
+	res->charWidths = calloc(charlen * sizeof(*res->charWidths), 1);
+	res->valign = calloc(charlen * sizeof(*res->valign), 1);
 	
 
 	// construct code mapping
@@ -194,7 +194,7 @@ TextRes* LoadFont(char* fontName, int size, char* chars) {
 		err = FT_Load_Char(fontFace, chars[i], FT_LOAD_RENDER);
 		
 		paddedw = (slot->metrics.width >> 6) + padding;
-		bearingY = slot->metrics.horiBearingY >> 6;
+		bearingY = (unsigned)slot->metrics.horiBearingY >> 6;
 		charHeight = slot->metrics.height >> 6;
 		
 		res->charWidths[i] = paddedw + padding;
@@ -299,7 +299,7 @@ void SaveSDFFont(char* path, TextRes* res) {
 	fwrite(res->codeIndex, 1, res->indexLen, f);
 	fwrite(res->offsets, 2, n, f);
 	fwrite(res->kerning, 1, n, f);
-	fwrite(res->valign, 1, n, f);
+	fwrite(res->valign, 1, n * sizeof(*res->valign), f);
 	fwrite(res->charWidths, 2, n, f);
 	
 	// the data
@@ -347,8 +347,8 @@ TextRes* LoadSDFFont(char* path) {
 	res->kerning = malloc(n);
 	fread(res->kerning, 1, n, f);
 	
-	res->valign = malloc(n);
-	fread(res->valign, 1, n, f);
+	res->valign = malloc(n  * sizeof(*res->valign));
+	fread(res->valign, 1, n * sizeof(*res->valign), f);
 	
 	res->charWidths = malloc(2 * n);
 	fread(res->charWidths, 2, n, f);
@@ -431,7 +431,7 @@ TextRes* GenerateSDFFont(char* fontName, int size, char* chars) {
 	res->maxHeight = height;
 	
 	res->texture = malloc(width * height * sizeof(*res->texture));
-	memset(res->texture, 0xff, width * height);
+	memset(res->texture, 0xff, width * height * sizeof(*res->texture));
 	res->offsets = calloc(charlen * sizeof(*res->offsets), 1);
 	res->charWidths = calloc(charlen * sizeof(*res->charWidths), 1);
 	res->valign = calloc(charlen * sizeof(*res->valign), 1);
@@ -467,8 +467,8 @@ TextRes* GenerateSDFFont(char* fontName, int size, char* chars) {
 		h_above = MAX(h_above, slot->metrics.horiBearingY >> 6);
 		h_below = MAX(h_below, ymin);
 		
-		//printf("(%c) res->valign[i]: %d, slot->metrics.height: %d \n", 
-		//	chars[i], res->valign[i], slot->metrics.height >> 6);
+		printf("(%c) res->valign[i]: %d, slot->metrics.height: %d \n", 
+			chars[i], res->valign[i], slot->metrics.height >> 6);
 	}
 	
 	int tex_width = nextPOT(width);
