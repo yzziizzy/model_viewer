@@ -17,7 +17,6 @@
 
 #include "c3dlas/c3dlas.h"
 #include "c3dlas/meshgen.h"
-#include "text/text.h"
 #include "c_json/json.h"
 #include "json_gl.h"
 
@@ -44,11 +43,6 @@ float zoom;
 
 
 // temp shit
-TextRes* arial, *arialsdf;
-ShaderProgram* textProg;
-Matrix textProj, textModel;
-TextRenderInfo* strRI;
-
 GUIText* gt;
 
 StaticMesh* testmesh;
@@ -410,27 +404,12 @@ void initGame(XStuff* xs, GameState* gs) {
 	// text rendering stuff
 	
 	gui_Init();
-	gt = guiTextNew("gui!", NULL, 6.0f, "Arial");
 	
-	/*
-	arialsdf = LoadSDFFont("arial.sdf");
-	if(arialsdf == NULL) {
-		arialsdf = GenerateSDFFont("Arial", 16, NULL);
-		SaveSDFFont("arial.sdf", arialsdf);
-	}
-	//arial = LoadFont("Arial", 32, NULL);
-	glerr("clearing before text program load");
-	textProg = loadCombinedProgram("textSDF");
-	printf("text prog %d\n", textProg->id);
-	unsigned int colors[] = {
-		0xFF0000FF, 2,
-		0x00FF00FF, 4,
-		0x0000FFFF, INT_MAX
-	};
+	gt = guiTextNew("gui!", &(Vector){1.0,1.0,0.0}, 6.0f, "Arial");
 	
-	//strRI = prepareText(arial, "FPS: --", -1, colors);
-	strRI = prepareText(arialsdf, "FPS: --", -1, colors);
-	*/
+	guiTextNew("gui2", &(Vector){10.0,1.0,0.0}, 6.0f, "Arial");
+	
+	
 	
 	axes_Init();
 	
@@ -498,11 +477,7 @@ void preFrame(GameState* gs) {
 		
 		glexit("");
 		snprintf(frameCounterBuf, 128, "dtime:  %.2fms", sdtime);
-// 		snprintf(frameCounterBuf, 128, "dtime:  %.2fms", gs->perfTimes.draw * 1000);
 		
-		//printf("--->%s\n", frameCounterBuf);
-		
-	//	updateText(strRI, frameCounterBuf, -1, fpsColors);
 		guiTextSetValue(gt, frameCounterBuf);
 		lastPoint = now;
 	}
@@ -823,52 +798,7 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	renderable_Draw(testrenderable, msGetTop(&gs->view), msGetTop(&gs->proj));
 
 
-	guiTextRender(gt, gs);
-
-	return;
-	
-	/*
-	glUseProgram(textProg->id);
-	
-	
-	
-	// text stuff
-	textProj = IDENT_MATRIX;
-	textModel = IDENT_MATRIX;
-	
-	mOrtho(0, gs->screen.aspect, 0, 1, -1, 100, &textProj);
-	//mScale3f(.5,.5,.5, &textProj);
-	
-	mScale3f(.06, .06, .06, &textModel);
-	
-	GLuint tp_ul = glGetUniformLocation(textProg->id, "mProj");
-	GLuint tm_ul = glGetUniformLocation(textProg->id, "mModel");
-	GLuint ts_ul = glGetUniformLocation(textProg->id, "fontTex");
-	
-	glUniformMatrix4fv(tp_ul, 1, GL_FALSE, textProj.m);
-	glUniformMatrix4fv(tm_ul, 1, GL_FALSE, textModel.m);
-	glexit("text matrix uniforms");
-
-	glDisable(GL_CULL_FACE);
-	
-	glActiveTexture(GL_TEXTURE0);
-	glexit("active texture");
-
-	glUniform1i(ts_ul, 0);
-	glexit("text sampler uniform");
-// 	glBindTexture(GL_TEXTURE_2D, arial->textureID);
-	glBindTexture(GL_TEXTURE_2D, arialsdf->textureID);
-	glexit("bind texture");
-	
-	
-	glBindVertexArray(strRI->vao);
-	glexit("text vao bind");
-	
-	glBindBuffer(GL_ARRAY_BUFFER, strRI->vbo);
-	glexit("text vbo bind");
-	glDrawArrays(GL_TRIANGLES, 0, strRI->vertexCnt);
-	glexit("text drawing");
-	*/
+	guiRenderAll(gs);
 }
 
 

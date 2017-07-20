@@ -10,6 +10,8 @@
 
 
 
+
+
 typedef struct {
 	char* current;
 	
@@ -28,6 +30,8 @@ typedef struct {
 
 GUIText* guiTextNew(char* str, Vector* pos, float size, char* fontname);
 void gui_Init();
+void guiRenderAll(GameState* gs);
+
 void guiTextRender(GUIText* gt, GameState* gs);
 void guiTextDelete(GUIText* gt);
 void guiTextSetValue(GUIText* gt, char* newval);

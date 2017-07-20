@@ -98,14 +98,14 @@ GUIText* guiTextNew(char* str, Vector* pos, float size, char* fontname) {
 	if(pos) vCopy(pos, &gt->pos);
 	gt->size = size;
 	
-		gt->font = getFont(fontname);
+	gt->font = getFont(fontname);
 	if(!gt->font) {
 		printf(stderr, "Failed to load font: %s\n", fontname);
 	}
 	
 	if(str) {
 		gt->current = strdup(str);
-		gt->strRI = prepareText(gt->font, "FPS: --", -1, colors);
+		gt->strRI = prepareText(gt->font, str, -1, colors);
 	}
 	
 	
@@ -125,32 +125,51 @@ void guiTextSetValue(GUIText* gt, char* newval) {
 		0x88FF88FF, INT_MAX
 	};
 	
-	updateText(gt->strRI, newval, -1, colors);
+	if(0 != strcmp(newval, gt->current)) {
+		if(gt->current) free(gt->current);
+		gt->current = strdup(newval);
+	
+		updateText(gt->strRI, newval, -1, colors);
+	}
+}
+
+
+void guiRenderAll(GameState* gs) {
+	int i;
+	
+	for(i = 0; i < VEC_LEN(&gui_list); i++) {
+		
+		guiTextRender(VEC_DATA(&gui_list)[i], gs);
+	}
 }
 
 
 void guiTextRender(GUIText* gt, GameState* gs) {
 	
-	Matrix textProj, textModel;
+	Matrix textProj;
 	
+	MatrixStack textModel;
+	
+	msAlloc(3, &textModel);
 	
 	glUseProgram(textProg->id);
 	
 	// text stuff
 	textProj = IDENT_MATRIX;
-	textModel = IDENT_MATRIX;
 	
 	mOrtho(0, gs->screen.aspect, 0, 1, -1, 100, &textProj);
 	//mScale3f(.5,.5,.5, &textProj);
 	
-	mScale3f(.06, .06, .06, &textModel);
+	msIdent(&textModel);
+	msScale3f(gt->size * .01, gt->size* .01, gt->size * .01, &textModel);
+	msTransv(&gt->pos, &textModel);
 	
 	GLuint tp_ul = glGetUniformLocation(textProg->id, "mProj");
 	GLuint tm_ul = glGetUniformLocation(textProg->id, "mModel");
 	GLuint ts_ul = glGetUniformLocation(textProg->id, "fontTex");
 	
 	glUniformMatrix4fv(tp_ul, 1, GL_FALSE, textProj.m);
-	glUniformMatrix4fv(tm_ul, 1, GL_FALSE, textModel.m);
+	glUniformMatrix4fv(tm_ul, 1, GL_FALSE, msGetTop(&textModel)->m);
 	glexit("text matrix uniforms");
 
 	glDisable(GL_CULL_FACE);
