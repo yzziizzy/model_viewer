@@ -8,7 +8,7 @@
 
 // declare a vector
 #define VEC(t) \
-struct vector { \
+struct { \
 	size_t len, alloc; \
 	t* data; \
 }
@@ -26,12 +26,16 @@ do { \
 #define VEC_LEN(x) ((x)->len)
 #define VEC_ALLOC(x) ((x)->alloc)
 #define VEC_DATA(x) ((x)->data)
+#define VEC_ITEM(x, i) (VEC_DATA(x)[(i)])
 
 #define VEC_TAIL(x) (VEC_DATA(x)[VEC_LEN(x)])
 #define VEC_HEAD(x) (VEC_DATA(x)[0])
+
+#define VEC_FIND(x, ptr_o) vec_find(VEC_DATA(x), VEC_LEN(x), sizeof(*VEC_DATA(x)), ptr_o)
+
 //  
 
-#define VEC_GROW(x) vec_resize(&VEC_DATA(x), &VEC_ALLOC(x), sizeof(*VEC_DATA(x)))
+#define VEC_GROW(x) vec_resize((void**)&VEC_DATA(x), &VEC_ALLOC(x), sizeof(*VEC_DATA(x)))
 
 // check if a size increase is needed to insert one more item
 #define VEC_CHECK(x) \
@@ -84,7 +88,8 @@ do { \
 
 
 
-
+void inline vec_resize(void** data, size_t* size, size_t elem_size);
+ptrdiff_t inline vec_find(void* data, size_t len, size_t stride, void* search);
 
 
 

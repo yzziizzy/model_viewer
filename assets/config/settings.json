@@ -1,8 +1,8 @@
 {
 kb: {
 	keyRotateSensitivity: 0.500,
-	keyScrollSensitivity: 0.500,
-	keyZoomSensitivity  : 0.500,
+	keyScrollSensitivity: 0.00500,
+	keyZoomSensitivity  : 0.00500,
 
 	mouseRotateSensitivity: 0.500,
 	mouseScrollSensitivity: 0.500,

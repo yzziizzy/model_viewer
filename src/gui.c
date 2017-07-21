@@ -114,9 +114,8 @@ GUIText* guiTextNew(char* str, Vector* pos, float size, char* fontname) {
 	return gt;
 }
 
-void guiTextDelete(GUIText* gt) {
-	
-	
+void guiDelete(GUIHeader* gh) {
+	gh->deleted = 1;
 }
 
 
@@ -134,7 +133,7 @@ void guiTextSetValue(GUIText* gt, char* newval) {
 }
 
 
-void guiRenderAll(GameState* gs) {
+void gui_RenderAll(GameState* gs) {
 	int i;
 	
 	for(i = 0; i < VEC_LEN(&gui_list); i++) {

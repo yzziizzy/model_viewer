@@ -9,10 +9,20 @@
 #include "game.h"
 
 
-
+typedef struct {
+	Vector pos;
+	float size;
+	
+	char hidden;
+	char deleted;
+	
+} GUIHeader;
 
 
 typedef struct {
+	GUIHeader header;
+	
+	
 	char* current;
 	
 	Vector pos;
@@ -30,7 +40,7 @@ typedef struct {
 
 GUIText* guiTextNew(char* str, Vector* pos, float size, char* fontname);
 void gui_Init();
-void guiRenderAll(GameState* gs);
+void gui_RenderAll(GameState* gs);
 
 void guiTextRender(GUIText* gt, GameState* gs);
 void guiTextDelete(GUIText* gt);

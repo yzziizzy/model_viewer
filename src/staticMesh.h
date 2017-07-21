@@ -20,15 +20,17 @@ typedef struct StaticMesh {
 	char ready;
 	
 	// always GL_TRIANGLES
-	Vector* vertices;
-	Vector* normals; // uses vertexCnt
-	uint32_t* indices;
-	int vertexCnt;
+	VEC(Vector) vertices;
+	VEC(Vector) normals; 
+	VEC(Vector) texcoords; 
+	VEC(uint32_t) vertexIndices;
+	VEC(uint32_t) normalIndices;
+	VEC(uint32_t) textureIndices;
+	//int vertexCnt;
 	int faceCnt;
-	int indexCnt; // = faceCnt * 3
+	//int indexCnt; // = faceCnt * 3
 	
-	int* edges; // indices into vertices
-	int edgeCnt;
+	VEC(int*) edges; // indices into vertices
 	
 	HashTable* edgeLookup;
 	
@@ -65,6 +67,7 @@ void staticMesh_RegenMeta(StaticMesh* sm);
 
 void initStaticMeshes();
 StaticMesh* StaticMeshFromOBJ(OBJContents* obj);
+StaticMesh* StaticMesh_LoadOBJ(char* path);
 
 void drawStaticMesh(StaticMesh* m, Matrix* view, Matrix* proj);
 

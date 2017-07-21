@@ -46,10 +46,6 @@ float zoom;
 GUIText* gt;
 
 StaticMesh* testmesh;
-Renderable* testrenderable;
-
-// MapBlock* map;
-// TerrainBlock* terrain;
 
 GLuint fsQuadVAO, fsQuadVBO;
 ShaderProgram* shadingProg;
@@ -281,8 +277,8 @@ void initGame(XStuff* xs, GameState* gs) {
 	
 	gs->debugMode = 0;
 	
-	gs->nearClipPlane = 20;
-	gs->farClipPlane = 1700;
+	gs->nearClipPlane = 0.1;
+	gs->farClipPlane = 100;
 
 	
 	ww = xs->winAttr.width;
@@ -381,10 +377,10 @@ void initGame(XStuff* xs, GameState* gs) {
 // 	msPerspective(60, 1.0, 01000.0f, 100000.0f, proj);
 // 		msOrtho(0, 1, 0, 1, .01, 100000, proj);
 
-	gs->zoom = -760.0;
+	gs->zoom = -10.0;
 	gs->direction = 0.0f;
-	gs->lookCenter.x = 128;
-	gs->lookCenter.y = 128;
+	gs->lookCenter.x = 0;
+	gs->lookCenter.y = 0;
 	
 	
 	//initStaticMeshes();
@@ -407,20 +403,23 @@ void initGame(XStuff* xs, GameState* gs) {
 	
 	gt = guiTextNew("gui!", &(Vector){1.0,1.0,0.0}, 6.0f, "Arial");
 	
-	guiTextNew("gui2", &(Vector){10.0,1.0,0.0}, 6.0f, "Arial");
 	
 	
 	
 	axes_Init();
-	
-	OBJContents cube;
-	loadOBJFile("assets/models/gazebo.obj", 0, &cube);
-	//Mesh* cubem = OBJtoMesh(&cube);
-	testmesh = staticMesh_FromOBJ(&cube);
+
+	testmesh = staticMesh_LoadOBJ("assets/models/gazebo.obj");
 	staticMesh_RegenMeta(testmesh);
-	testrenderable = renderable_FromOBJ(&cube);
+
+	char tmpbuf[200];
 	
-	testrenderable->scale = 150;
+	snprintf(tmpbuf, 200, "vertices: %d", VEC_LEN(&testmesh->vertices));
+	guiTextNew(tmpbuf, &(Vector){10.0,1.0,0.0}, 6.0f, "Arial");
+
+	snprintf(tmpbuf, 200, "faces: %d", VEC_LEN(&testmesh->vertexIndices) / 3);
+	guiTextNew(tmpbuf, &(Vector){10.0,2.0,0.0}, 6.0f, "Arial");
+
+	
 	
 	int axisindex = axes_Add(10, NULL);
 	
@@ -794,11 +793,9 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	
 	//updateView(xs, gs, is);
 
-// 	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
-	renderable_Draw(testrenderable, msGetTop(&gs->view), msGetTop(&gs->proj));
+	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
 
-
-	guiRenderAll(gs);
+	gui_RenderAll(gs);
 }
 
 
