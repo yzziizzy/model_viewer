@@ -167,6 +167,14 @@ void guiTextRender(GUIText* gt, GameState* gs) {
 	GLuint tm_ul = glGetUniformLocation(textProg->id, "mModel");
 	GLuint ts_ul = glGetUniformLocation(textProg->id, "fontTex");
 	
+	GLuint lower_ul = glGetUniformLocation(textProg->id, "smoothLower");
+	GLuint upper_ul = glGetUniformLocation(textProg->id, "smoothUpper");
+	GLuint limit_ul = glGetUniformLocation(textProg->id, "smoothLimit");
+	
+	glUniform1f(lower_ul, font_smooth_lower);
+	glUniform1f(upper_ul, font_smooth_upper);
+	glUniform1f(limit_ul, font_smooth_limit);
+	
 	glUniformMatrix4fv(tp_ul, 1, GL_FALSE, textProj.m);
 	glUniformMatrix4fv(tm_ul, 1, GL_FALSE, msGetTop(&textModel)->m);
 	glexit("text matrix uniforms");

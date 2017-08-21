@@ -33,6 +33,9 @@ void main() {
 
 // fragment shader
 uniform sampler2D fontTex;
+uniform float smoothLower;
+uniform float smoothUpper;
+uniform float smoothLimit;
 
 in vec2 texCoord;
 in vec4 color;
@@ -47,9 +50,9 @@ void main(void) {
 	
 	d = 1 - d;
 
-	a = smoothstep(0.6, .8, abs(d));
+	a = smoothstep(smoothLower, smoothUpper, abs(d));
 
-	if(a < 0.1) discard;
+	if(a < smoothLimit) discard;
 	
 	gl_FragColor = vec4(color.abg, a); 
 

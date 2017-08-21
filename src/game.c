@@ -32,7 +32,7 @@
 #include "game.h"
 // #include "scene.h"
 
-#include "axes.h"
+// #include "axes.h"
 
 
 GLuint proj_ul, view_ul, model_ul;
@@ -41,6 +41,9 @@ Matrix mProj, mView, mModel;
 
 float zoom;
 
+float font_smooth_lower = 0.25;
+float font_smooth_upper = 0.91;
+float font_smooth_limit = 0.5;
 
 // temp shit
 GUIText* gt;
@@ -406,7 +409,7 @@ void initGame(XStuff* xs, GameState* gs) {
 	
 	
 	
-	axes_Init();
+	//axes_Init();
 
 	testmesh = staticMesh_LoadOBJ("assets/models/gazebo.obj");
 	staticMesh_RegenMeta(testmesh);
@@ -421,7 +424,7 @@ void initGame(XStuff* xs, GameState* gs) {
 
 	
 	
-	int axisindex = axes_Add(10, NULL);
+	//int axisindex = axes_Add(10, NULL);
 	
 }
 
@@ -587,6 +590,21 @@ void handleInput(GameState* gs, InputState* is) {
 		gs->hasMoved = 1;
 	}
 
+	// 79/83
+	// 80/84
+	// 81/85
+#define SANITY(var, inc) { var = MIN(1.0, MAX(0.0, var + inc)); printf(#var " = %.4f\n", var); }
+	if(is->keyState[79] & IS_KEYDOWN) SANITY(font_smooth_lower, 0.001);
+	if(is->keyState[83] & IS_KEYDOWN) SANITY(font_smooth_lower, -0.001);
+	
+	if(is->keyState[80] & IS_KEYDOWN) SANITY(font_smooth_upper, 0.001);
+	if(is->keyState[84] & IS_KEYDOWN) SANITY(font_smooth_upper, -0.001);
+	
+	if(is->keyState[81] & IS_KEYDOWN) SANITY(font_smooth_limit, 0.001);
+	if(is->keyState[85] & IS_KEYDOWN) SANITY(font_smooth_limit, -0.001);
+	
+	
+	
 	// keep rotation in [0,F_2PI)
 	gs->direction = fmodf(F_2PI + gs->direction, F_2PI);
 	

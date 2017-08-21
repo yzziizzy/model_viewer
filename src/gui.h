@@ -8,6 +8,11 @@
 #include "text/text.h"
 #include "game.h"
 
+extern float font_smooth_lower;
+extern float font_smooth_upper;
+extern float font_smooth_limit;
+
+// temp shit
 
 typedef struct {
 	Vector pos;
