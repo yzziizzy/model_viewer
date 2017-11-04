@@ -8,6 +8,7 @@
 
 
 enum PropType {
+	PT_LIST,
 	PT_FLOAT,
 	PT_DOUBLE,
 	PT_INT8,
@@ -24,8 +25,19 @@ enum PropType {
 
 typedef struct {
 	char* name;
+	enum PropType type;
+	enum PropType list_len;
+	enum PropType list_item;
+	
+} ply_prop;
+
+
+typedef struct {
+	char* name;
 	long count;
-	int stride;
+	int stride; // lists don't have this
+	
+	VEC(ply_prop) props;
 	
 } ply_elem;
 
@@ -47,7 +59,7 @@ typedef struct {
 	char* texPath; // only one texture supported atm
 	
 	VEC(Vector) vertices;
-	VEC(Vector) colors;
+	VEC(Vector4) colors;
 	VEC(Vector) normals; // NYI
 	VEC(Vector) texcoords;
 	
@@ -56,7 +68,7 @@ typedef struct {
 	// parsing info
 	
 	// byte or position offsets into each element 
-	short r_offset, g_offset, b_offset;
+	short r_offset, g_offset, b_offset, a_offset;
 	short x_offset, y_offset, z_offset;
 	short u_offset, v_offset;
 	
@@ -64,6 +76,12 @@ typedef struct {
 	int faceStride;
 	
 	VEC(ply_elem) elements;
+	
+	char foundVertices;
+	char foundFaces;
+	char foundNormals;
+	char foundTexCoords;
+	char foundVertColors;
 	
 } PLYContents;
 

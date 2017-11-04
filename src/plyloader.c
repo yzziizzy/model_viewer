@@ -44,38 +44,66 @@ static void skipline(char** s) {
 }
 
 
-struct { char* name; int len; } propTable[] = {
-	[PT_FLOAT] = {"float", 4},
-	[PT_DOUBLE] = {"double", 8},
-	[PT_INT8] = {"char", 1},
-	[PT_INT16] = {"short", 2},
-	[PT_INT32] = {"int", 4},
-	[PT_INT64] = {"long", 8},
-	[PT_UINT8] = {"uchar", 1},
-	[PT_UINT16] = {"ushort", 2},
-	[PT_UINT32] = {"uint", 4},
-	[PT_UINT64] = {"ulong", 8},
+struct { char* name; int len; } propSize[] = {
+	[PT_FLOAT] = {4},
+	[PT_DOUBLE] = {8},
+	[PT_INT8] = {1},
+	[PT_INT16] = {2},
+	[PT_INT32] = {4},
+	[PT_INT64] = {8},
+	[PT_UINT8] = {1},
+	[PT_UINT16] = {2},
+	[PT_UINT32] = {4},
+	[PT_UINT64] = {8},
+};
+	
+struct { enum PropType type; char* name; } propTable[] = {
+	// standard names
+	{PT_FLOAT, "float"},
+	{PT_DOUBLE, "double"},
+	{PT_INT8, "char"},
+	{PT_INT16, "short"},
+	{PT_INT32, "int"},
+	{PT_INT64, "long"},
+	{PT_UINT8, "uchar"},
+	{PT_UINT16, "ushort"},
+	{PT_UINT32, "uint"},
+	{PT_UINT64, "ulong"},
+	
+	// colmap uses this style
+	{PT_FLOAT, "float32"},
+	{PT_DOUBLE, "double64"},
+	{PT_INT8, "int8"},
+	{PT_INT16, "int16"},
+	{PT_INT32, "int32"},
+	{PT_INT64, "int64"},
+	{PT_UINT8, "uint8"},
+	{PT_UINT16, "uint16"},
+	{PT_UINT32, "uint32"},
+	{PT_UINT64, "uint64"},
 };
 	
 
 static enum PropType parsePropType(char** s) {
 	int i;
+	int len = sizeof(propTable) / sizeof(propTable[0]);
 	
-	while(i = 0; i < PT_MAX_VAL; i++) {
+	while(i = 0; i < len; i++) {
 		if(!checkstr(*s, propTable[i].name)) continue;
 		
 		*s += strlen(propTable[i].name);
-		return i;
+		return propTable[i].type;
 	}
 	
-	return PT_NONE;
+	return PT_MAX_VAL;
 }
 
 // returns true if there's more
 static int parseHeader(PLYContents* pc, char** s) {
-
-	enum PropType t;
+	
+	enum PropType t, list_len_type, list_type;
 	ply_elem* e;
+	ply_prop* p;
 	
 	
 	while(1) {
@@ -111,6 +139,7 @@ static int parseHeader(PLYContents* pc, char** s) {
 			
 			VEC_INC(&pc->elements);
 			e = &VEC_TAIL(&pc->elements);
+			VEC_INIT(&e->props);
 			
 			{
 				char* end = strchr(*s, ' ');
@@ -132,26 +161,41 @@ static int parseHeader(PLYContents* pc, char** s) {
 			skipline(s);
 		}
 		else if(checkstr(*s, "property")) {
-			t = parsePropType(*s);
+			VEC_INC(&e->props);
+			p = &VEC_TAIL(&e->props);
+			
+			p->type = t = parsePropType(*s);
 			*s++;
 			
-			if(*(s+1) == ' ') {
-				// TODO: make sure we're in the right element
-				switch(**s) {
-					case 'r': pc->r_offset = e->stride; break;;
-					case 'g': pc->g_offset = e->stride; break;;
-					case 'b': pc->b_offset = e->stride; break;;
-					
-					case 'x': pc->x_offset = e->stride; break;;
-					case 'y': pc->y_offset = e->stride; break;;
-					case 'z': pc->z_offset = e->stride; break;;
-					
-					case 'u': pc->u_offset = e->stride; break;;
-					case 'v': pc->v_offset = e->stride; break;;
+			if(t == PT_LIST) {
+				// TODO save name
+				if(*(s+1) == ' ') {
+					// TODO: make sure we're in the right element
+					switch(**s) {
+						case 'r': pc->r_offset = e->stride; break;;
+						case 'g': pc->g_offset = e->stride; break;;
+						case 'b': pc->b_offset = e->stride; break;;
+						
+						case 'x': pc->x_offset = e->stride; break;;
+						case 'y': pc->y_offset = e->stride; break;;
+						case 'z': pc->z_offset = e->stride; break;;
+						
+						case 'u': pc->u_offset = e->stride; break;;
+						case 'v': pc->v_offset = e->stride; break;;
+					}
 				}
+				
+				e->stride += propSize[t];
 			}
-			
-			e->stride += propTable[t].len;
+			else {
+				p->list_len = parsePropType(*s);
+				*s++;
+				p->list_item = parsePropType(*s);
+				*s++;
+				
+				
+				// check names
+			}
 			
 			skipline(s);
 		}
@@ -212,6 +256,9 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 		goto FAIL;
 	}
 	
+	// print out some stats
+	
+	
 	
 	for(i = 0; i < VEC_LEN(&pc->elements); i++) {
 		ply_elem* e = VEC_ITEM(&pc->elements, i);
@@ -223,7 +270,11 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 			parseFaces(pc, s);
 		}
 		
-		
+		// temporary solution:
+		//  record original vertices size (numVertices should be it) 
+		// store first found tex coord in texcoords
+		// every new one initiates search starting from numVertices
+		// if a complete vertex match is not found, a new vertex is created
 	}
 	
 	
@@ -239,6 +290,18 @@ FAIL:
 }
 
 
+
+static void parseVertices(PLYContents* pc, char** s) {
+	
+	
+	
+}
+
+static void parseFaces(PLYContents* pc, char** s) {
+	
+	
+	
+}
 
 
 
