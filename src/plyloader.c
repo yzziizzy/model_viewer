@@ -43,6 +43,16 @@ static void skipline(char** s) {
 	(*s)++;
 }
 
+static char* dupname(char** s) {
+	char* n;
+	char* end = strchr(*s, ' ');
+	n = strndup(*s, end - *s);
+	
+	*s = end + 1;
+	
+	return n;
+}
+
 
 struct { char* name; int len; } propSize[] = {
 	[PT_FLOAT] = {4},
@@ -98,6 +108,8 @@ static enum PropType parsePropType(char** s) {
 	return PT_MAX_VAL;
 }
 
+
+
 // returns true if there's more
 static int parseHeader(PLYContents* pc, char** s) {
 	
@@ -141,19 +153,16 @@ static int parseHeader(PLYContents* pc, char** s) {
 			e = &VEC_TAIL(&pc->elements);
 			VEC_INIT(&e->props);
 			
-			{
-				char* end = strchr(*s, ' ');
-				e->name = strndup(*s, end - *s);
-				*s = end + 1;
-			}
-			
+			e->name = dupname(*s);
 			e->count = strtol(*s, NULL, 10);
 			
 			if(checkstr(e->name, "vertex")) {
 				pc->numVertices = e->count;
+				pc->foundVertices = 1;
 			}
 			else if(checkstr(e->name, "face")) {
 				pc->numFaces = e->count;
+				pc->foundFaces = 1;
 			}
 			
 			e->stride = 0;
@@ -169,9 +178,12 @@ static int parseHeader(PLYContents* pc, char** s) {
 			
 			if(t == PT_LIST) {
 				// TODO save name
-				if(*(s+1) == ' ') {
+				p->name = dupname(*s);
+
+				
+				if(p->name[1] == NULL) {
 					// TODO: make sure we're in the right element
-					switch(**s) {
+					switch(p->name[0]) {
 						case 'r': pc->r_offset = e->stride; break;;
 						case 'g': pc->g_offset = e->stride; break;;
 						case 'b': pc->b_offset = e->stride; break;;
@@ -193,8 +205,15 @@ static int parseHeader(PLYContents* pc, char** s) {
 				p->list_item = parsePropType(*s);
 				*s++;
 				
+				p->name = dupname(*s);
 				
-				// check names
+				// check for special names 
+				if(checkstr(e->name, "vertex_indices")) {
+					pc->foundIndices = 1;
+				}
+				else if(checkstr(e->name, "texcood")) {
+					pc->foundFaceTexCoords = 1;
+				}
 			}
 			
 			skipline(s);
@@ -257,7 +276,18 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 	}
 	
 	// print out some stats
-	
+	for(i = 0; i < VEC_LEN(&pc->elements); i++) {
+		ply_elem* e = &VEC_ITEM(pc->elements, i);
+		printf("element %d: %s [%d]\n", i, e->name, e->count); 
+		printf("  --> stride: %d\n", e->stride);
+		
+		for(j = 0; j < VEC_LEN(&e->props); j++) {
+			ply_prop* p = &VEC_ITEM(&e->props);
+			
+			printf("  prop %d: %s\n", j, p->name);
+		}
+		
+	}
 	
 	
 	for(i = 0; i < VEC_LEN(&pc->elements); i++) {

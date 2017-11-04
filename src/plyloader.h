@@ -77,10 +77,15 @@ typedef struct {
 	
 	VEC(ply_elem) elements;
 	
+	// elements
 	char foundVertices;
 	char foundFaces;
+
+	// properties
+	char foundIndices;
 	char foundNormals;
-	char foundTexCoords;
+	char foundVertTexCoords;
+	char foundFaceTexCoords;
 	char foundVertColors;
 	
 } PLYContents;
