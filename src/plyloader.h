@@ -37,6 +37,8 @@ typedef struct {
 	long count;
 	int stride; // lists don't have this
 	
+	char hasLists;
+	
 	VEC(ply_prop) props;
 	
 } ply_elem;

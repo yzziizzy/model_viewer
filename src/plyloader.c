@@ -179,7 +179,7 @@ static int parseHeader(PLYContents* pc, char** s) {
 			if(t == PT_LIST) {
 				// TODO save name
 				p->name = dupname(*s);
-
+				e->hasLists = 1;
 				
 				if(p->name[1] == NULL) {
 					// TODO: make sure we're in the right element
@@ -237,6 +237,48 @@ static int parseHeader(PLYContents* pc, char** s) {
 }
 
 
+int readPropLen(ply_prop* p, char** s) {
+	int l = 0;
+	
+	switch(p->list_len) {
+		case PT_INT8:
+		case PT_UINT8:
+			l = **s;
+			*s += 1;
+			break;
+			
+		case PT_INT16:
+		case PT_UINT16:
+			l = *((int16_t*)(*s))
+			*s += 2;
+			break;
+			
+		case PT_INT32:
+		case PT_UINT32:
+			l = *((int32_t*)(*s))
+			*s += 4;
+			break;
+			
+		case PT_INT64:
+		case PT_UINT64:
+			l = *((int64_t*)(*s))
+			*s += 8;
+			break;
+			
+		case PT_FLOAT: // wtf?
+			l = *((float*)(*s))
+			*s += 4;
+			break;
+			
+		case PT_DOUBLE: // wtf?
+			l = *((double*)(*s))
+			*s += 8;
+			break;
+	}
+	
+	return l;
+}
+
 
 
 PLYContents* PLYContents_loadPath(char* path) {
@@ -290,6 +332,7 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 	}
 	
 	
+	// only supports LE binary files atm
 	for(i = 0; i < VEC_LEN(&pc->elements); i++) {
 		ply_elem* e = VEC_ITEM(&pc->elements, i);
 		
@@ -298,6 +341,28 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 		}
 		else if(!strcmp(e->name, "face")) {
 			parseFaces(pc, s);
+		}
+		else { // unrecognized elements are skipped
+			if(!e->hasLists) {
+				// fixed size element sets can be skipped with math
+				s += e->stride * e->count;
+			}
+			else {
+				// elements with lists have to be parsed individually in binary files
+				for(int j = 0; j < VEC_LEN(&e->props); j++) {
+					ply_prop* p = VEC_ITEM(&e->props, j);
+					
+					if(p->type != PT_LIST) {
+						s += propSize[p->type];
+						continue;
+					}
+					
+					int len = readPropLen(p, &s);
+					
+					s += propSize[p->type] * len;
+				}
+			}
+			
 		}
 		
 		// temporary solution:
