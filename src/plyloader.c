@@ -242,10 +242,10 @@ static int parseHeader(PLYContents* pc, char** s) {
 }
 
 
-int readValue(ply_prop* p, char** s) {
-	int l = 0;
+int64_t readValueI(enum PropType t, char** s) {
+	int64_t l = 0;
 	
-	switch(p->list_len) {
+	switch(t) {
 		case PT_INT8:
 		case PT_UINT8:
 			l = **s;
@@ -362,7 +362,7 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 						continue;
 					}
 					
-					int len = readPropLen(p, &s);
+					int len = readValueI(p->list_len, &s);
 					
 					s += propSize[p->type] * len;
 				}
@@ -390,7 +390,7 @@ FAIL:
 }
 
 
-static float readValue(enum PropType t, char** s) {
+static float readValueF(enum PropType t, char** s) {
 	switch(t) {
 		case PT_FLOAT: // wtf?
 			return *((float*)(*s))
@@ -407,8 +407,6 @@ static float readValue(enum PropType t, char** s) {
 
 static void parseVertices(PLYContents* pc, ply_elem* e, char** s) {
 	int i, j;
-	short x_offset, y_offset, z_offset;
-	
 	
 	for(i = 0; i < e->count; i++) {
 		Vector* t;
@@ -423,7 +421,7 @@ static void parseVertices(PLYContents* pc, ply_elem* e, char** s) {
 			
 			
 			if(p->name[1] == NULL) {
-				f = readValue(p->type, s);
+				f = readValueF(p->type, s);
 				
 				switch(p->name[0]) {
 					case 'x': case 'X': t->x = f; break;;
@@ -432,15 +430,86 @@ static void parseVertices(PLYContents* pc, ply_elem* e, char** s) {
 				}
 			}
 			
+			// TODO: handle list types
 			*s += propSize[p->type];
 		}
 		
 	}
 }
 
+
+static void skipProp(ply_prop* p, char** s) {
+	
+	if(p->type != PT_LIST) {
+		s += propSize[p->type];
+		return;
+	}
+	
+	int len = readValueI(p->list_len, s);
+	s += propSize[p->type] * len;
+}
+
+
 static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
+	int i, j;
+	short indicesIndex = -1;
+	short texIndex = -1;
 	
 	
+	// cache property indices for things we want to avoid strcmp in the inner loop
+	for(j = 0; j < VEC_LEN(&e->props); j++) {
+		ply_prop* p = VEC_ITEM(&e->props, j);
+		
+		if(0 == strcmp(p->name, "vertex_indices") { // used by openmvs
+			indicesIndex = j;
+		}
+		else if(0 == strcmp(p->name, "texcoord") { // used by openmvs
+			texIndex = j;
+		}
+	}
+	
+	
+	
+	for(i = 0; i < e->count; i++) {
+		Vector* t;
+		
+		VEC_INC(&pc->vertices);
+		t = &VEC_TAIL(&pc->vertices);
+		
+		
+		for(j = 0; j < VEC_LEN(&e->props); j++) {
+			int index;
+			ply_prop* p = VEC_ITEM(&e->props, j);
+			
+			// large faces are triangulated
+			if(j == indicesIndex) {
+				int len = readValueI(p->list_len, s);
+				
+				int a = readValueI(p->list_item, s);
+				int b = readValueI(p->list_item, s);
+				
+				for(int k = 2; k < len; k++) {
+					int c = readValueI(p->list_item, s);
+					
+					VEC_PUSH(&pc->faces, a);
+					VEC_PUSH(&pc->faces, b);
+					VEC_PUSH(&pc->faces, c);
+					
+					b = c;
+				}
+				
+			} 
+			else if(j == texIndex) {
+				
+				// HACK TODO: fix
+				skipProp(p, s);
+			}
+			else {
+				skipProp(p, s);
+			}
+			
+		}
+	}
 	
 }
 

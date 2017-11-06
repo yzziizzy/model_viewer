@@ -69,14 +69,6 @@ typedef struct {
 	
 	// parsing info
 	
-	// byte or position offsets into each element 
-	short r_offset, g_offset, b_offset, a_offset;
-	short x_offset, y_offset, z_offset;
-	short u_offset, v_offset;
-	
-	int vertexStride;
-	int faceStride;
-	
 	VEC(ply_elem) elements;
 	
 	// elements
