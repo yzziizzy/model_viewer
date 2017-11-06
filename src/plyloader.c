@@ -9,6 +9,11 @@
 #define checkstr(a, b) 0 == strncmp(a, b, strlen(b))
 
 
+static void parseVertices(PLYContents* pc, ply_elem* e, char** s);
+static void parseFaces(PLYContents* pc, ply_elem* e, char** s);
+
+
+
 PLYContents* allocPLYContents() {
 	PLYContents* pc;
 	
@@ -181,21 +186,21 @@ static int parseHeader(PLYContents* pc, char** s) {
 				p->name = dupname(*s);
 				e->hasLists = 1;
 				
-				if(p->name[1] == NULL) {
-					// TODO: make sure we're in the right element
-					switch(p->name[0]) {
-						case 'r': pc->r_offset = e->stride; break;;
-						case 'g': pc->g_offset = e->stride; break;;
-						case 'b': pc->b_offset = e->stride; break;;
-						
-						case 'x': pc->x_offset = e->stride; break;;
-						case 'y': pc->y_offset = e->stride; break;;
-						case 'z': pc->z_offset = e->stride; break;;
-						
-						case 'u': pc->u_offset = e->stride; break;;
-						case 'v': pc->v_offset = e->stride; break;;
-					}
-				}
+// 				if(p->name[1] == NULL) {
+// 					// TODO: make sure we're in the right element
+// 					switch(p->name[0]) {
+// 						case 'r': pc->r_offset = e->stride; break;;
+// 						case 'g': pc->g_offset = e->stride; break;;
+// 						case 'b': pc->b_offset = e->stride; break;;
+// 						
+// 						case 'x': pc->x_offset = e->stride; break;;
+// 						case 'y': pc->y_offset = e->stride; break;;
+// 						case 'z': pc->z_offset = e->stride; break;;
+// 						
+// 						case 'u': pc->u_offset = e->stride; break;;
+// 						case 'v': pc->v_offset = e->stride; break;;
+// 					}
+// 				}
 				
 				e->stride += propSize[t];
 			}
@@ -237,7 +242,7 @@ static int parseHeader(PLYContents* pc, char** s) {
 }
 
 
-int readPropLen(ply_prop* p, char** s) {
+int readValue(ply_prop* p, char** s) {
 	int l = 0;
 	
 	switch(p->list_len) {
@@ -337,10 +342,10 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 		ply_elem* e = VEC_ITEM(&pc->elements, i);
 		
 		if(!strcmp(e->name, "vertex")) {
-			parseVertices(pc, s);
+			parseVertices(pc, e, s);
 		}
 		else if(!strcmp(e->name, "face")) {
-			parseFaces(pc, s);
+			parseFaces(pc, e, s);
 		}
 		else { // unrecognized elements are skipped
 			if(!e->hasLists) {
@@ -385,14 +390,55 @@ FAIL:
 }
 
 
-
-static void parseVertices(PLYContents* pc, char** s) {
-	
-	
-	
+static float readValue(enum PropType t, char** s) {
+	switch(t) {
+		case PT_FLOAT: // wtf?
+			return *((float*)(*s))
+			
+		case PT_DOUBLE: // wtf?
+			return *((double*)(*s))
+			
+		default:
+			fprintf(stderr, "PLY Loader: tried to read a non-float value.\n");
+			return 0;
+	}
 }
 
-static void parseFaces(PLYContents* pc, char** s) {
+
+static void parseVertices(PLYContents* pc, ply_elem* e, char** s) {
+	int i, j;
+	short x_offset, y_offset, z_offset;
+	
+	
+	for(i = 0; i < e->count; i++) {
+		Vector* t;
+		
+		VEC_INC(&pc->vertices);
+		t = &VEC_TAIL(&pc->vertices);
+		
+		
+		for(int j = 0; j < VEC_LEN(&e->props); j++) {
+			float f;
+			ply_prop* p = VEC_ITEM(&e->props, j);
+			
+			
+			if(p->name[1] == NULL) {
+				f = readValue(p->type, s);
+				
+				switch(p->name[0]) {
+					case 'x': case 'X': t->x = f; break;;
+					case 'y': case 'Y': t->y = f; break;;
+					case 'z': case 'Z': t->z = f; break;;
+				}
+			}
+			
+			*s += propSize[p->type];
+		}
+		
+	}
+}
+
+static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 	
 	
 	
