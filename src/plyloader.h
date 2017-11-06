@@ -1,26 +1,28 @@
 #ifndef __mesh_viewer__plyloader_h__
 #define __mesh_viewer__plyloader_h__
 
+#include "common_gl.h"
 #include "common_math.h"
+
 
 #include "ds.h"
 
 
 
 enum PropType {
-	PT_LIST,
+	PT_LIST, // 0
 	PT_FLOAT,
 	PT_DOUBLE,
 	PT_INT8,
 	PT_INT16,
-	PT_INT32,
+	PT_INT32, // 5
 	PT_INT64,
 	PT_UINT8,
 	PT_UINT16,
 	PT_UINT32,
-	PT_UINT64,
+	PT_UINT64, // 10
 	PT_MAX_VAL
-}
+};
 
 
 typedef struct {
@@ -87,8 +89,8 @@ typedef struct {
 
 
 
-
-
+PLYContents* PLYContents_loadPath(char* path);
+PLYContents* PLYContents_load(char* contents, size_t length);
 
 
 

@@ -1,4 +1,4 @@
-#include <stdlibh>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -6,7 +6,7 @@
 #include "plyloader.h"
 
 
-#define checkstr(a, b) 0 == strncmp(a, b, strlen(b))
+#define checkstr(a, b) (0 == strncmp(a, b, strlen(b)))
 
 
 static void parseVertices(PLYContents* pc, ply_elem* e, char** s);
@@ -44,13 +44,14 @@ void destroyPLYContents(PLYContents* pc) {
 
 
 static void skipline(char** s) {
+	//printf("skipping: %.10s\n", *s);
 	while(**s && **s != '\n') (*s)++;
 	(*s)++;
 }
 
 static char* dupname(char** s) {
 	char* n;
-	char* end = strchr(*s, ' ');
+	char* end = strpbrk(*s, " \n\r");
 	n = strndup(*s, end - *s);
 	
 	*s = end + 1;
@@ -59,21 +60,23 @@ static char* dupname(char** s) {
 }
 
 
-struct { char* name; int len; } propSize[] = {
-	[PT_FLOAT] = {4},
-	[PT_DOUBLE] = {8},
-	[PT_INT8] = {1},
-	[PT_INT16] = {2},
-	[PT_INT32] = {4},
-	[PT_INT64] = {8},
-	[PT_UINT8] = {1},
-	[PT_UINT16] = {2},
-	[PT_UINT32] = {4},
-	[PT_UINT64] = {8},
+int propSize[] = {
+	[PT_FLOAT] = 4,
+	[PT_DOUBLE] = 8,
+	[PT_INT8] = 1,
+	[PT_INT16] = 2,
+	[PT_INT32] = 4,
+	[PT_INT64] = 8,
+	[PT_UINT8] = 1,
+	[PT_UINT16] = 2,
+	[PT_UINT32] = 4,
+	[PT_UINT64] = 8,
 };
 	
 struct { enum PropType type; char* name; } propTable[] = {
 	// standard names
+	{PT_LIST, "list"},
+	
 	{PT_FLOAT, "float"},
 	{PT_DOUBLE, "double"},
 	{PT_INT8, "char"},
@@ -103,7 +106,7 @@ static enum PropType parsePropType(char** s) {
 	int i;
 	int len = sizeof(propTable) / sizeof(propTable[0]);
 	
-	while(i = 0; i < len; i++) {
+	for(i = 0; i < len; i++) {
 		if(!checkstr(*s, propTable[i].name)) continue;
 		
 		*s += strlen(propTable[i].name);
@@ -123,15 +126,23 @@ static int parseHeader(PLYContents* pc, char** s) {
 	ply_prop* p;
 	
 	
-	while(1) {
+	while(1) { //printf("-looping: %.16s\n", *s);
 		
-		if(checkstr(*s, "comment")) {
-			*s++;
+		if(checkstr(*s, "comment")) { 
+		//	printf("found comment\n");
+			(*s)++;
+			
+			skipline(s);
+		}
+		else if(checkstr(*s, "obj_info")) { 
+		//	printf("found obj_info\n");
+			(*s)++;
 			
 			skipline(s);
 		}
 		else if(checkstr(*s, "format")) {
-			*s++;
+		//	printf("found format\n");
+			(*s)++;
 			
 			if(checkstr(*s, "ascii")) {
 				pc->isBinary = 0;
@@ -147,19 +158,22 @@ static int parseHeader(PLYContents* pc, char** s) {
 				
 				fprintf(stderr, "WARNING: big-endian ply files are not support. please upgrade your files to the 21st century.\n");
 			}
-			
 			skipline(s);
+		//	printf("%.10s", *s);
 		}
 		else if(checkstr(*s, "element")) {
 			// 'element' lines contain how many are in the file and start the property list  
-			*s++;
+			(*s) += strlen("element") + 1;
 			
 			VEC_INC(&pc->elements);
 			e = &VEC_TAIL(&pc->elements);
 			VEC_INIT(&e->props);
 			
-			e->name = dupname(*s);
+			
+			
+			e->name = dupname(s);
 			e->count = strtol(*s, NULL, 10);
+			printf("elem %s: %d\n", e->name, e->count);
 			
 			if(checkstr(e->name, "vertex")) {
 				pc->numVertices = e->count;
@@ -178,13 +192,15 @@ static int parseHeader(PLYContents* pc, char** s) {
 			VEC_INC(&e->props);
 			p = &VEC_TAIL(&e->props);
 			
-			p->type = t = parsePropType(*s);
-			*s++;
+			(*s) += strlen("property") + 1;
 			
-			if(t == PT_LIST) {
+			p->type = t = parsePropType(s);
+			(*s)++;
+			
+			if(t != PT_LIST) {
 				// TODO save name
-				p->name = dupname(*s);
-				e->hasLists = 1;
+				printf("--propname: %.5s\n", *s);
+				p->name = dupname(s);
 				
 // 				if(p->name[1] == NULL) {
 // 					// TODO: make sure we're in the right element
@@ -205,12 +221,15 @@ static int parseHeader(PLYContents* pc, char** s) {
 				e->stride += propSize[t];
 			}
 			else {
-				p->list_len = parsePropType(*s);
-				*s++;
-				p->list_item = parsePropType(*s);
-				*s++;
+				p->list_len = parsePropType(s);
+				(*s)++;
+				p->list_item = parsePropType(s);
+				(*s)++;
 				
-				p->name = dupname(*s);
+				printf("--list types: %d %d \n", p->list_len, p->list_item);
+				
+				p->name = dupname(s);
+				e->hasLists = 1;
 				
 				// check for special names 
 				if(checkstr(e->name, "vertex_indices")) {
@@ -221,9 +240,12 @@ static int parseHeader(PLYContents* pc, char** s) {
 				}
 			}
 			
-			skipline(s);
+		//	printf("prop %s [%d]\n", p->name, p->type);
+			
+			//skipline(s);
 		}
 		else if(checkstr(*s, "ply")) {
+		//	printf("found ply\n");
 			skipline(s);
 		}
 		else if(checkstr(*s, "end_header")) {
@@ -233,8 +255,10 @@ static int parseHeader(PLYContents* pc, char** s) {
 		}
 		else {
 			// huh?
-			fprintf(stderr, "ERROR: unknown line found in ply header\n;");
-			return 1;
+			fprintf(stderr, "ERROR: unknown line found in ply header: %.10s\n", *s);
+			exit(1);
+			skipline(s);
+			
 		}
 	
 	}
@@ -254,29 +278,29 @@ int64_t readValueI(enum PropType t, char** s) {
 			
 		case PT_INT16:
 		case PT_UINT16:
-			l = *((int16_t*)(*s))
+			l = *((int16_t*)(*s));
 			*s += 2;
 			break;
 			
 		case PT_INT32:
 		case PT_UINT32:
-			l = *((int32_t*)(*s))
+			l = *((int32_t*)(*s));
 			*s += 4;
 			break;
 			
 		case PT_INT64:
 		case PT_UINT64:
-			l = *((int64_t*)(*s))
+			l = *((int64_t*)(*s));
 			*s += 8;
 			break;
 			
 		case PT_FLOAT: // wtf?
-			l = *((float*)(*s))
+			l = *((float*)(*s));
 			*s += 4;
 			break;
 			
 		case PT_DOUBLE: // wtf?
-			l = *((double*)(*s))
+			l = *((double*)(*s));
 			*s += 8;
 			break;
 	}
@@ -302,7 +326,7 @@ PLYContents* PLYContents_loadPath(char* path) {
 
 
 PLYContents* PLYContents_load(char* contents, size_t length) {
-	int i;
+	int i, j;
 	PLYContents* pc;
 	char* s = contents;
 	
@@ -314,22 +338,23 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 	
 	pc = allocPLYContents();
 	
-	
+	printf("elemlen %d\n", VEC_LEN(&pc->elements));
 	
 	// grab data in the order specified
 	if(parseHeader(pc, &s)) {
 		fprintf(stderr, "PLY header parsing failed\n");
 		goto FAIL;
 	}
+	printf("elemlen %d\n", VEC_LEN(&pc->elements));
 	
 	// print out some stats
 	for(i = 0; i < VEC_LEN(&pc->elements); i++) {
-		ply_elem* e = &VEC_ITEM(pc->elements, i);
-		printf("element %d: %s [%d]\n", i, e->name, e->count); 
-		printf("  --> stride: %d\n", e->stride);
+		ply_elem* e = &VEC_ITEM(&pc->elements, i);
+		printf("element %d: %s [%d] {%d}\n", i, e->name, e->count, VEC_LEN(&e->props)); 
+		//printf("  --> stride: %d\n", e->stride);
 		
 		for(j = 0; j < VEC_LEN(&e->props); j++) {
-			ply_prop* p = &VEC_ITEM(&e->props);
+			ply_prop* p = &VEC_ITEM(&e->props, j);
 			
 			printf("  prop %d: %s\n", j, p->name);
 		}
@@ -339,13 +364,13 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 	
 	// only supports LE binary files atm
 	for(i = 0; i < VEC_LEN(&pc->elements); i++) {
-		ply_elem* e = VEC_ITEM(&pc->elements, i);
+		ply_elem* e = &VEC_ITEM(&pc->elements, i);
 		
 		if(!strcmp(e->name, "vertex")) {
-			parseVertices(pc, e, s);
+			parseVertices(pc, e, &s);
 		}
 		else if(!strcmp(e->name, "face")) {
-			parseFaces(pc, e, s);
+			parseFaces(pc, e, &s);
 		}
 		else { // unrecognized elements are skipped
 			if(!e->hasLists) {
@@ -355,7 +380,7 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 			else {
 				// elements with lists have to be parsed individually in binary files
 				for(int j = 0; j < VEC_LEN(&e->props); j++) {
-					ply_prop* p = VEC_ITEM(&e->props, j);
+					ply_prop* p = &VEC_ITEM(&e->props, j);
 					
 					if(p->type != PT_LIST) {
 						s += propSize[p->type];
@@ -393,10 +418,10 @@ FAIL:
 static float readValueF(enum PropType t, char** s) {
 	switch(t) {
 		case PT_FLOAT: // wtf?
-			return *((float*)(*s))
+			return *((float*)(*s));
 			
 		case PT_DOUBLE: // wtf?
-			return *((double*)(*s))
+			return *((double*)(*s));
 			
 		default:
 			fprintf(stderr, "PLY Loader: tried to read a non-float value.\n");
@@ -417,10 +442,10 @@ static void parseVertices(PLYContents* pc, ply_elem* e, char** s) {
 		
 		for(int j = 0; j < VEC_LEN(&e->props); j++) {
 			float f;
-			ply_prop* p = VEC_ITEM(&e->props, j);
+			ply_prop* p = &VEC_ITEM(&e->props, j);
 			
 			
-			if(p->name[1] == NULL) {
+			if(p->name[1] == '\0') {
 				f = readValueF(p->type, s);
 				
 				switch(p->name[0]) {
@@ -458,12 +483,12 @@ static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 	
 	// cache property indices for things we want to avoid strcmp in the inner loop
 	for(j = 0; j < VEC_LEN(&e->props); j++) {
-		ply_prop* p = VEC_ITEM(&e->props, j);
+		ply_prop* p = &VEC_ITEM(&e->props, j);
 		
-		if(0 == strcmp(p->name, "vertex_indices") { // used by openmvs
+		if(0 == strcmp(p->name, "vertex_indices")) { // used by openmvs
 			indicesIndex = j;
 		}
-		else if(0 == strcmp(p->name, "texcoord") { // used by openmvs
+		else if(0 == strcmp(p->name, "texcoord")) { // used by openmvs
 			texIndex = j;
 		}
 	}
@@ -479,7 +504,7 @@ static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 		
 		for(j = 0; j < VEC_LEN(&e->props); j++) {
 			int index;
-			ply_prop* p = VEC_ITEM(&e->props, j);
+			ply_prop* p = &VEC_ITEM(&e->props, j);
 			
 			// large faces are triangulated
 			if(j == indicesIndex) {

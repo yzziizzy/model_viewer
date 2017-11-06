@@ -30,6 +30,7 @@
 #include "staticMesh.h"
 #include "renderable.h"
 #include "game.h"
+#include "plyloader.h"
 // #include "scene.h"
 
 // #include "axes.h"
@@ -424,6 +425,8 @@ void initGame(XStuff* xs, GameState* gs) {
 
 	
 	
+	PLYContents_loadPath("/home/izzy/3dimages/things/artifact/chopped.ply");
+	printf("PLY loaded\n");
 	//int axisindex = axes_Add(10, NULL);
 	
 }
@@ -809,7 +812,6 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	c2.x = 300; //cursorp.x;
 	c2.y = 300; //cursorp.z;
 	
-	//updateView(xs, gs, is);
 
 	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
 
