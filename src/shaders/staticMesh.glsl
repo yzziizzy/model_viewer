@@ -45,7 +45,7 @@ layout(location = 1) out vec4 out_Normal;
 
 void main(void) {
 	
-	out_Color = vec4(vs_tex.xy / 65536, 1, 1); //vs_norm;
+	out_Color = vec4(vs_tex.xy / 65536, 0, 1); //vs_norm;
 	out_Normal = normalize(vec4(0.5, 0.5, 0.5, 1)); //vs_norm;
 //	out_Lighting = vec4(0.5, 0.5, 1, 1);
 }

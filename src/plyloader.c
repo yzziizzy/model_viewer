@@ -26,6 +26,7 @@ PLYContents* allocPLYContents() {
 	VEC_INIT(&pc->normals);
 	VEC_INIT(&pc->texcoords);
 	VEC_INIT(&pc->faces);
+	VEC_INIT(&pc->indicesTex);
 	VEC_INIT(&pc->elements);
 	
 	return pc;
@@ -518,7 +519,51 @@ static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 // 				printf("texcoord\n");
 				// HACK TODO: fix
 // 			printf(" {%ul} ", (uint64_t)*s);
-					
+				char* s_save = *s;
+				
+				int len = readValueI(p->list_len, s);
+				//printf("tex len: %d\n", len);
+				
+				if(len != 6) {
+					printf("unsupported texcoord length of %d found; skipping data (will ruin model)\n", len);
+				}
+				
+				float fa, fb;
+				
+				// 1
+				fa = readValueF(p->list_item, s);
+				fb = readValueF(p->list_item, s);
+				
+				VEC_INC(&pc->texcoords);
+				VEC_TAIL(&pc->texcoords).x = fa;
+				VEC_TAIL(&pc->texcoords).y = fb;
+				
+				VEC_PUSH(&pc->indicesTex, VEC_LEN(&pc->texcoords)-1);
+				
+				
+				// 2
+				fa = readValueF(p->list_item, s);
+				fb = readValueF(p->list_item, s);
+				
+				VEC_INC(&pc->texcoords);
+				VEC_TAIL(&pc->texcoords).x = fa;
+				VEC_TAIL(&pc->texcoords).y = fb;
+				
+				VEC_PUSH(&pc->indicesTex, VEC_LEN(&pc->texcoords)-1);
+				
+				
+				// 3
+				fa = readValueF(p->list_item, s);
+				fb = readValueF(p->list_item, s);
+				
+				VEC_INC(&pc->texcoords);
+				VEC_TAIL(&pc->texcoords).x = fa;
+				VEC_TAIL(&pc->texcoords).y = fb;
+				
+				VEC_PUSH(&pc->indicesTex, VEC_LEN(&pc->texcoords)-1);
+				
+				
+				*s = s_save;
 				skipProp(p, s); // printf(" {%ul} ", (uint64_t)*s);
 			}
 			else {

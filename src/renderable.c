@@ -146,6 +146,7 @@ Renderable* renderable_FromPLY(PLYContents* pc) {
 	
 	for(i = 0; i < VEC_LEN(&pc->faces); i++) {
 		int q = VEC_ITEM(&pc->faces, i);
+		int r = VEC_ITEM(&pc->indicesTex, i);
 		
 		if(q >= VEC_LEN(&pc->vertices)) {
 			printf("vertex index outside bounds %d: (%d, %d)\n", i, q, VEC_LEN(&pc->vertices));
@@ -153,6 +154,9 @@ Renderable* renderable_FromPLY(PLYContents* pc) {
 		} 
 		
 		vCopy(&VEC_ITEM(&pc->vertices, q), &vertices[i].v);
+		vertices[i].t.u = 65535 / VEC_ITEM(&pc->texcoords, r).x;
+		vertices[i].t.v = 65535 / VEC_ITEM(&pc->texcoords, r).y;
+		
 		vCopy(&null, &vertices[i].n);
 		
 		//if(vertices[i].v.x != 0.0)

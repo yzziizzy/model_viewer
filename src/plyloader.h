@@ -68,6 +68,7 @@ typedef struct {
 	VEC(Vector) texcoords;
 	
 	VEC(int) faces;
+	VEC(int) indicesTex;
 	
 	// parsing info
 	

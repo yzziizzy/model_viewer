@@ -593,11 +593,11 @@ void handleInput(GameState* gs, InputState* is) {
 	
 	// look direction
 	if(is->keyState[38] & IS_KEYDOWN) {
-		gs->direction += rotateSpeed;
+		gs->direction += 0.1;
 		gs->hasMoved = 1;
 	}
 	if(is->keyState[39] & IS_KEYDOWN) {
-		gs->direction -= rotateSpeed;
+		gs->direction -= 0.1;
 		gs->hasMoved = 1;
 	}
 
@@ -826,9 +826,9 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	c2.x = 300; //cursorp.x;
 	c2.y = 300; //cursorp.z;
 	
-gs->renderable-> scale = 5;
+gs->renderable-> scale = 1;
 	renderable_Draw(gs->renderable, msGetTop(&gs->view), msGetTop(&gs->proj));
- 	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
+ //	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
 
 	gui_RenderAll(gs);
 }
