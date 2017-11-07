@@ -109,6 +109,8 @@ void renderable_Draw(Renderable* r, Matrix* view, Matrix* proj) {
 	glBindBuffer(GL_ARRAY_BUFFER, r->vbo);
 	glexit("Renderable vbo");
 	
+	//printf("vertices %d\n", r->dataCnt);
+	
 	glDrawArrays(r->type, 0, r->dataCnt);
 	glexit("Renderable draw");
 	
@@ -123,6 +125,54 @@ struct RenderableOBJVertex {
 		unsigned short u, v;
 	} t;
 };
+
+
+Renderable* renderable_FromPLY(PLYContents* pc) {
+	int i;
+	VAOConfig opts[] = {
+		// per vertex
+		{3, GL_FLOAT}, // position
+		{3, GL_FLOAT}, // normal
+		{2, GL_UNSIGNED_SHORT, GL_TRUE}, // tex
+		
+		{0, 0}
+	};
+	
+	Vector null = {0,0,0};
+	
+	//return NULL;
+	
+	struct RenderableOBJVertex* vertices = calloc(1, VEC_LEN(&pc->faces) * sizeof(*vertices));
+	
+	for(i = 0; i < VEC_LEN(&pc->faces); i++) {
+		int q = VEC_ITEM(&pc->faces, i);
+		
+		if(q >= VEC_LEN(&pc->vertices)) {
+			printf("vertex index outside bounds %d: (%d, %d)\n", i, q, VEC_LEN(&pc->vertices));
+			continue;
+		} 
+		
+		vCopy(&VEC_ITEM(&pc->vertices, q), &vertices[i].v);
+		vCopy(&null, &vertices[i].n);
+		
+		//if(vertices[i].v.x != 0.0)
+		//printf("[%.8f, %.8f, %.8f]\n", vertices[i].v.x, vertices[i].v.y, vertices[i].v.z);
+		
+		
+		//vertices[i].t.u = obj->faces[i].t.x * 65536;
+		//vertices[i].t.v = obj->faces[i].t.y * 65536;
+		
+		//printf("texcoord: [%f, %f] -> [%d, %d]\n",obj->faces[i].t.x, obj->faces[i].t.y, vertices[i].t.u,vertices[i].t.v );
+	}
+	
+	return renderable_Create(
+		GL_TRIANGLES,
+		"staticMesh",
+		opts,
+		vertices,
+		VEC_LEN(&pc->faces));
+}
+
 
 
 Renderable* renderable_FromOBJ(OBJContents* obj) {

@@ -126,22 +126,19 @@ static int parseHeader(PLYContents* pc, char** s) {
 	ply_prop* p;
 	
 	
-	while(1) { //printf("-looping: %.16s\n", *s);
+	while(1) { 
 		
 		if(checkstr(*s, "comment")) { 
-		//	printf("found comment\n");
 			(*s)++;
 			
 			skipline(s);
 		}
 		else if(checkstr(*s, "obj_info")) { 
-		//	printf("found obj_info\n");
 			(*s)++;
 			
 			skipline(s);
 		}
 		else if(checkstr(*s, "format")) {
-		//	printf("found format\n");
 			(*s)++;
 			
 			if(checkstr(*s, "ascii")) {
@@ -170,10 +167,8 @@ static int parseHeader(PLYContents* pc, char** s) {
 			VEC_INIT(&e->props);
 			
 			
-			
 			e->name = dupname(s);
 			e->count = strtol(*s, NULL, 10);
-			printf("elem %s: %d\n", e->name, e->count);
 			
 			if(checkstr(e->name, "vertex")) {
 				pc->numVertices = e->count;
@@ -198,25 +193,7 @@ static int parseHeader(PLYContents* pc, char** s) {
 			(*s)++;
 			
 			if(t != PT_LIST) {
-				// TODO save name
-				printf("--propname: %.5s\n", *s);
 				p->name = dupname(s);
-				
-// 				if(p->name[1] == NULL) {
-// 					// TODO: make sure we're in the right element
-// 					switch(p->name[0]) {
-// 						case 'r': pc->r_offset = e->stride; break;;
-// 						case 'g': pc->g_offset = e->stride; break;;
-// 						case 'b': pc->b_offset = e->stride; break;;
-// 						
-// 						case 'x': pc->x_offset = e->stride; break;;
-// 						case 'y': pc->y_offset = e->stride; break;;
-// 						case 'z': pc->z_offset = e->stride; break;;
-// 						
-// 						case 'u': pc->u_offset = e->stride; break;;
-// 						case 'v': pc->v_offset = e->stride; break;;
-// 					}
-// 				}
 				
 				e->stride += propSize[t];
 			}
@@ -225,8 +202,6 @@ static int parseHeader(PLYContents* pc, char** s) {
 				(*s)++;
 				p->list_item = parsePropType(s);
 				(*s)++;
-				
-				printf("--list types: %d %d \n", p->list_len, p->list_item);
 				
 				p->name = dupname(s);
 				e->hasLists = 1;
@@ -338,14 +313,12 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 	
 	pc = allocPLYContents();
 	
-	printf("elemlen %d\n", VEC_LEN(&pc->elements));
 	
 	// grab data in the order specified
 	if(parseHeader(pc, &s)) {
 		fprintf(stderr, "PLY header parsing failed\n");
 		goto FAIL;
 	}
-	printf("elemlen %d\n", VEC_LEN(&pc->elements));
 	
 	// print out some stats
 	for(i = 0; i < VEC_LEN(&pc->elements); i++) {
@@ -360,16 +333,19 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 		}
 		
 	}
-	
+	printf("vertices %d\n", VEC_LEN(&pc->vertices));
+	printf("faces %d\n", VEC_LEN(&pc->faces));
 	
 	// only supports LE binary files atm
 	for(i = 0; i < VEC_LEN(&pc->elements); i++) {
 		ply_elem* e = &VEC_ITEM(&pc->elements, i);
 		
 		if(!strcmp(e->name, "vertex")) {
+			printf("-- parsing vertices\n");
 			parseVertices(pc, e, &s);
 		}
 		else if(!strcmp(e->name, "face")) {
+			printf("-- parsing faces\n");
 			parseFaces(pc, e, &s);
 		}
 		else { // unrecognized elements are skipped
@@ -402,7 +378,8 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 		// if a complete vertex match is not found, a new vertex is created
 	}
 	
-	
+	printf("vertices %d\n", VEC_LEN(&pc->vertices));
+	printf("faces %d\n", VEC_LEN(&pc->faces));
 	
 	
 	return pc;
@@ -459,6 +436,8 @@ static void parseVertices(PLYContents* pc, ply_elem* e, char** s) {
 			*s += propSize[p->type];
 		}
 		
+		//printf("found vertex: [%.2f, %.2f, %.2f]\n", t->x, t->y, t->z);
+		
 	}
 }
 
@@ -471,7 +450,12 @@ static void skipProp(ply_prop* p, char** s) {
 	}
 	
 	int len = readValueI(p->list_len, s);
-	s += propSize[p->type] * len;
+// 	printf("proplen: %d * %d ", len, propSize[p->list_item]);
+// 		printf(" {%ul} ", (uint64_t)*s);
+				
+	*s += propSize[p->list_item] * len;
+// 		printf(" {%ul} \n", (uint64_t)*s);
+				
 }
 
 
@@ -494,12 +478,11 @@ static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 	}
 	
 	
+	uint64_t oldpos, newpos;
+	oldpos = *s;
 	
 	for(i = 0; i < e->count; i++) {
 		Vector* t;
-		
-		VEC_INC(&pc->vertices);
-		t = &VEC_TAIL(&pc->vertices);
 		
 		
 		for(j = 0; j < VEC_LEN(&e->props); j++) {
@@ -510,12 +493,18 @@ static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 			if(j == indicesIndex) {
 				int len = readValueI(p->list_len, s);
 				
+			//		printf(" z{%ul} ", (uint64_t)*s);
 				int a = readValueI(p->list_item, s);
+// 					printf(" a{%ul} ", (uint64_t)*s);
 				int b = readValueI(p->list_item, s);
+// 					printf(" b{%ul} ", (uint64_t)*s);
+				
+// 				printf("len: %d [%d, %d", len, a, b);
 				
 				for(int k = 2; k < len; k++) {
 					int c = readValueI(p->list_item, s);
-					
+// 					printf(" {%ul} ", (uint64_t)*s);
+// 					printf(", %d");
 					VEC_PUSH(&pc->faces, a);
 					VEC_PUSH(&pc->faces, b);
 					VEC_PUSH(&pc->faces, c);
@@ -523,17 +512,29 @@ static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 					b = c;
 				}
 				
+// 				printf("]\n");
 			} 
 			else if(j == texIndex) {
-				
+// 				printf("texcoord\n");
 				// HACK TODO: fix
-				skipProp(p, s);
+// 			printf(" {%ul} ", (uint64_t)*s);
+					
+				skipProp(p, s); // printf(" {%ul} ", (uint64_t)*s);
 			}
 			else {
 				skipProp(p, s);
 			}
 			
+			newpos = *s;
+		
+// 			printf("oldpos: %ul, newpos: %ul, dist: %ul \n", oldpos, newpos, newpos - oldpos);
+			oldpos = newpos;
+			
+			
 		}
+		
+		
+
 	}
 	
 }

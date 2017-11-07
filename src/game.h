@@ -141,7 +141,9 @@ typedef struct GameState {
 	// temp stuff with no better place atm
 	int activeTool;
 	
-
+	
+	Renderable* renderable;
+	
 	
 } GameState;
 

@@ -412,6 +412,18 @@ void initGame(XStuff* xs, GameState* gs) {
 	
 	//axes_Init();
 
+	
+	PLYContents* pc = PLYContents_loadPath("/home/izzy/3dimages/things/artifact/chopped.ply");
+	printf("PLY loaded\n");
+	
+	printf("vertices %d\n", VEC_LEN(&pc->vertices));
+	printf("faces %d\n", VEC_LEN(&pc->faces));
+	
+	gs->renderable = renderable_FromPLY(pc);
+	printf("PLY renderable created\n");
+	//int axisindex = axes_Add(10, NULL);
+	
+	
 	testmesh = staticMesh_LoadOBJ("assets/models/gazebo.obj");
 	staticMesh_RegenMeta(testmesh);
 
@@ -424,11 +436,7 @@ void initGame(XStuff* xs, GameState* gs) {
 	guiTextNew(tmpbuf, &(Vector){10.0,2.0,0.0}, 6.0f, "Arial");
 
 	
-	
-	PLYContents_loadPath("/home/izzy/3dimages/things/artifact/chopped.ply");
-	printf("PLY loaded\n");
-	//int axisindex = axes_Add(10, NULL);
-	
+
 }
 
 
@@ -613,13 +621,15 @@ void handleInput(GameState* gs, InputState* is) {
 	
 	// zoom
 	if(is->keyState[52] & IS_KEYDOWN) { 
-		gs->zoom += keyZoom;
+		gs->zoom += .1;
  		gs->zoom = fmin(gs->zoom, -10.0);
 		gs->hasMoved = 1;
+		printf("52 zoom: %f\n", gs->zoom);
 	}
 	if(is->keyState[53] & IS_KEYDOWN) {
-		gs->zoom -= keyZoom;
+		gs->zoom -= .1;
 		gs->hasMoved = 1;
+		printf("53 zoom: %f\n", gs->zoom);
 	}
 	if(is->clickButton == 4) {
 		gs->zoom += mouseZoom;
@@ -633,18 +643,20 @@ void handleInput(GameState* gs, InputState* is) {
 
 	// movement
 	Vector move = {
-		.x = moveSpeed * sin(F_PI - gs->direction),
-		.y = moveSpeed * cos(F_PI - gs->direction),
+		.x = 0.1 * sin(F_PI - gs->direction),
+		.y = 0.1 * cos(F_PI - gs->direction),
 		.z = 0.0f
 	};
 	
 	if(is->keyState[111] & IS_KEYDOWN) {
 		vAdd(&gs->lookCenter, &move, &gs->lookCenter);
 		gs->hasMoved = 1;
+		printf("m\n");
 	}
 	if(is->keyState[116] & IS_KEYDOWN) {
 		vSub(&gs->lookCenter, &move, &gs->lookCenter);
 		gs->hasMoved = 1;
+		printf("n\n");
 	}
 	
 	// flip x and y to get ccw normal, using move.z as the temp
@@ -656,10 +668,12 @@ void handleInput(GameState* gs, InputState* is) {
 	if(is->keyState[113] & IS_KEYDOWN) {
 		vSub(&gs->lookCenter, &move, &gs->lookCenter);
 		gs->hasMoved = 1;
+		printf("113\n");
 	}
 	if(is->keyState[114] & IS_KEYDOWN) {
 		vAdd(&gs->lookCenter, &move, &gs->lookCenter);
 		gs->hasMoved = 1;
+		printf("114\n");
 	}
 	
 	// these don't stimulate a selection pass since they are debug tools
@@ -812,8 +826,9 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	c2.x = 300; //cursorp.x;
 	c2.y = 300; //cursorp.z;
 	
-
-	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
+gs->renderable-> scale = 5;
+	renderable_Draw(gs->renderable, msGetTop(&gs->view), msGetTop(&gs->proj));
+ 	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
 
 	gui_RenderAll(gs);
 }

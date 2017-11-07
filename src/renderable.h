@@ -3,6 +3,7 @@
 
 #include "ds.h"
 
+#include "plyloader.h"
 
 
 typedef struct RenderableVertex {

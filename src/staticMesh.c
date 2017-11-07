@@ -242,6 +242,7 @@ StaticMesh* staticMesh_Create() {
 }
 
 
+
 // hacky for now, sloppily recreates index data
 StaticMesh* staticMesh_LoadOBJ(char* path) {
 	int i;
