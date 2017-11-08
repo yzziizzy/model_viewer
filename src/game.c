@@ -298,8 +298,8 @@ void initGame(XStuff* xs, GameState* gs) {
 	printf("w: %d, h: %d\n", ww, wh);
 	
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	
@@ -413,7 +413,7 @@ void initGame(XStuff* xs, GameState* gs) {
 	//axes_Init();
 
 	
-	PLYContents* pc = PLYContents_loadPath("/home/izzy/3dimages/things/artifact/chopped.ply");
+	PLYContents* pc = PLYContents_loadPath("/home/izzy/3dimages/things/rock_2/model_dense_mesh_refine_texture.ply");
 	printf("PLY loaded\n");
 	
 	printf("vertices %d\n", VEC_LEN(&pc->vertices));
@@ -622,18 +622,18 @@ void handleInput(GameState* gs, InputState* is) {
 	// zoom
 	if(is->keyState[52] & IS_KEYDOWN) { 
 		gs->zoom += .1;
- 		gs->zoom = fmin(gs->zoom, -10.0);
+ 		gs->zoom = fmin(gs->zoom, -.01);
 		gs->hasMoved = 1;
-		printf("52 zoom: %f\n", gs->zoom);
+		//printf("52 zoom: %f\n", gs->zoom);
 	}
 	if(is->keyState[53] & IS_KEYDOWN) {
 		gs->zoom -= .1;
 		gs->hasMoved = 1;
-		printf("53 zoom: %f\n", gs->zoom);
+		//printf("53 zoom: %f\n", gs->zoom);
 	}
 	if(is->clickButton == 4) {
 		gs->zoom += mouseZoom;
- 		gs->zoom = fmin(gs->zoom, -10.0);
+ 		gs->zoom = fmin(gs->zoom, -.01);
 		gs->hasMoved = 1;
 	}
 	if(is->clickButton == 5) {
@@ -651,12 +651,12 @@ void handleInput(GameState* gs, InputState* is) {
 	if(is->keyState[111] & IS_KEYDOWN) {
 		vAdd(&gs->lookCenter, &move, &gs->lookCenter);
 		gs->hasMoved = 1;
-		printf("m\n");
+		//printf("m\n");
 	}
 	if(is->keyState[116] & IS_KEYDOWN) {
 		vSub(&gs->lookCenter, &move, &gs->lookCenter);
 		gs->hasMoved = 1;
-		printf("n\n");
+		//printf("n\n");
 	}
 	
 	// flip x and y to get ccw normal, using move.z as the temp
@@ -668,12 +668,12 @@ void handleInput(GameState* gs, InputState* is) {
 	if(is->keyState[113] & IS_KEYDOWN) {
 		vSub(&gs->lookCenter, &move, &gs->lookCenter);
 		gs->hasMoved = 1;
-		printf("113\n");
+		//printf("113\n");
 	}
 	if(is->keyState[114] & IS_KEYDOWN) {
 		vAdd(&gs->lookCenter, &move, &gs->lookCenter);
 		gs->hasMoved = 1;
-		printf("114\n");
+		//printf("114\n");
 	}
 	
 	// these don't stimulate a selection pass since they are debug tools
@@ -830,7 +830,12 @@ gs->renderable-> scale = 1;
 	renderable_Draw(gs->renderable, msGetTop(&gs->view), msGetTop(&gs->proj));
  //	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
 	gui_RenderAll(gs);
+	
+	glDisable(GL_BLEND);
 }
 
 

@@ -7,6 +7,7 @@
 
 
 #define checkstr(a, b) (0 == strncmp(a, b, strlen(b)))
+#define checkstrcase(a, b) (0 == strncasecmp(a, b, strlen(b)))
 
 
 static void parseVertices(PLYContents* pc, ply_elem* e, char** s);
@@ -109,6 +110,7 @@ static enum PropType parsePropType(char** s) {
 	
 	for(i = 0; i < len; i++) {
 		if(!checkstr(*s, propTable[i].name)) continue;
+		if(*(*s + strlen(propTable[i].name)) != ' ') continue;
 		
 		*s += strlen(propTable[i].name);
 		return propTable[i].type;
@@ -117,6 +119,28 @@ static enum PropType parsePropType(char** s) {
 	return PT_MAX_VAL;
 }
 
+
+
+char* realPathFromSiblingPath(char* sibling, char* file) {
+	char* falsePath, *realPath;
+	
+	char* fuckdirname = strdup(sibling);
+	char* dir;
+	
+	dir = dirname(fuckdirname);
+	
+	falsePath = pathJoin(dir, file);
+	
+	realPath = realpath(falsePath, NULL);
+	if(!realPath) {
+		// handle errno
+	}
+	
+	free(fuckdirname);
+	free(falsePath);
+	
+	return realPath;
+}
 
 
 // returns true if there's more
@@ -130,7 +154,16 @@ static int parseHeader(PLYContents* pc, char** s) {
 	while(1) { 
 		
 		if(checkstr(*s, "comment")) { 
-			(*s)++;
+			*s += strlen("comment") + 1;
+			char* save_ss = *s;
+			//printf("comment line: '%.20s'\n", *s);
+			if(checkstrcase(*s, "texturefile")) {
+				*s += strlen("texturefile") + 1;
+				char* ts = dupname(s);
+				pc->texPath = realPathFromSiblingPath(pc->path, ts);
+				free(ts);
+			}
+			*s = save_ss;
 			
 			skipline(s);
 		}
@@ -140,7 +173,7 @@ static int parseHeader(PLYContents* pc, char** s) {
 			skipline(s);
 		}
 		else if(checkstr(*s, "format")) {
-			(*s)++;
+			*s += strlen("format") + 1;
 			
 			if(checkstr(*s, "ascii")) {
 				pc->isBinary = 0;
@@ -162,7 +195,6 @@ static int parseHeader(PLYContents* pc, char** s) {
 		else if(checkstr(*s, "element")) {
 			// 'element' lines contain how many are in the file and start the property list  
 			(*s) += strlen("element") + 1;
-			
 			VEC_INC(&pc->elements);
 			e = &VEC_TAIL(&pc->elements);
 			VEC_INIT(&e->props);
@@ -195,7 +227,7 @@ static int parseHeader(PLYContents* pc, char** s) {
 			
 			if(t != PT_LIST) {
 				p->name = dupname(s);
-				
+				printf("pname: %.20s\n", p->name);
 				e->stride += propSize[t];
 			}
 			else {
@@ -229,9 +261,13 @@ static int parseHeader(PLYContents* pc, char** s) {
 			
 			return 0;
 		}
+		else if(**s == '\n' || **s == '\r' || **s == ' ' || **s == '\t') {
+			skipline(s); //(*s)++;
+		}
 		else {
 			// huh?
 			fprintf(stderr, "ERROR: unknown line found in ply header: %.10s\n", *s);
+			*((char*)0) = 1;
 			exit(1);
 			skipline(s);
 			
@@ -288,32 +324,16 @@ int64_t readValueI(enum PropType t, char** s) {
 
 PLYContents* PLYContents_loadPath(char* path) {
 	size_t len;
-	char* contents;
+	char* contents, *s;
 	PLYContents* pc;
+	int i, j;
 	
 	contents = readFile(path, &len);
+	s = contents;
 	
-	pc = PLYContents_load(contents, len);
-	
-	free(contents);
-	
-	return pc;
-}
-
-
-PLYContents* PLYContents_load(char* contents, size_t length) {
-	int i, j;
-	PLYContents* pc;
-	char* s = contents;
-	
-	// read header
-	if(!strncpy(s, "ply", strlen("ply"))) {
-		fprintf(stderr, "Missing ply magic string.\n");
-		return NULL;
-	}
 	
 	pc = allocPLYContents();
-	
+	pc->path = path;
 	
 	// grab data in the order specified
 	if(parseHeader(pc, &s)) {
@@ -381,6 +401,7 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 	
 	printf("vertices %d\n", VEC_LEN(&pc->vertices));
 	printf("faces %d\n", VEC_LEN(&pc->faces));
+	free(contents);
 	
 	
 	return pc;
@@ -388,18 +409,24 @@ PLYContents* PLYContents_load(char* contents, size_t length) {
 FAIL:
 	destroyPLYContents(pc);
 	free(pc);
+	free(contents);
 	
 	return NULL;
 }
 
 
-static float readValueF(enum PropType t, char** s) {
+static double readValueF(enum PropType t, char** s) {
+	double f;
 	switch(t) {
 		case PT_FLOAT: // wtf?
-			return *((float*)(*s));
+			f = *((float*)(*s));
+			*s += sizeof(float);
+			return f;
 			
 		case PT_DOUBLE: // wtf?
-			return *((double*)(*s));
+			f = *((double*)(*s));
+			*s += sizeof(double);
+			return f;
 			
 		default:
 			fprintf(stderr, "PLY Loader: tried to read a non-float value.\n");
@@ -434,7 +461,7 @@ static void parseVertices(PLYContents* pc, ply_elem* e, char** s) {
 			}
 			
 			// TODO: handle list types
-			*s += propSize[p->type];
+			//*s += propSize[p->type];
 		}
 		
 		//printf("found vertex: [%.2f, %.2f, %.2f]\n", t->x, t->y, t->z);
@@ -481,6 +508,7 @@ static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 	
 	uint64_t oldpos, newpos;
 	oldpos = *s;
+	float minu = 1, maxu = 0, minv = 1, maxv = 0;
 	
 	for(i = 0; i < e->count; i++) {
 		Vector* t;
@@ -530,37 +558,53 @@ static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 				
 				float fa, fb;
 				
+				
+				// hope you have GCC...
+				void checkTexBounds(float u, float v) {
+					if(u > 1 || u < 0) printf("texture U coordinate out of bounds: %.7f\n", u);
+					if(v > 1 || v < 0) printf("texture V coordinate out of bounds: %.7f\n", v);
+				//printf("[%.9f, %.9f]\n", u, v);
+					minu = fmin(u, minu);
+					minv = fmin(v, minv);
+					maxu = fmax(u, maxu);
+					maxv = fmax(v, maxv);
+				}
+				
 				// 1
 				fa = readValueF(p->list_item, s);
 				fb = readValueF(p->list_item, s);
+			//	printf("tc: %.5f, %.5f\n", fa, fb);
 				
+				checkTexBounds(fa, fb);
 				VEC_INC(&pc->texcoords);
 				VEC_TAIL(&pc->texcoords).x = fa;
 				VEC_TAIL(&pc->texcoords).y = fb;
 				
-				VEC_PUSH(&pc->indicesTex, VEC_LEN(&pc->texcoords)-1);
+				VEC_PUSH(&pc->indicesTex, VEC_LEN(&pc->texcoords) - 1);
 				
 				
 				// 2
 				fa = readValueF(p->list_item, s);
 				fb = readValueF(p->list_item, s);
-				
+			//	printf("tc: %.5f, %.5f\n", fa, fb);
+				checkTexBounds(fa, fb);
 				VEC_INC(&pc->texcoords);
 				VEC_TAIL(&pc->texcoords).x = fa;
 				VEC_TAIL(&pc->texcoords).y = fb;
 				
-				VEC_PUSH(&pc->indicesTex, VEC_LEN(&pc->texcoords)-1);
+				VEC_PUSH(&pc->indicesTex, VEC_LEN(&pc->texcoords) - 1);
 				
 				
 				// 3
 				fa = readValueF(p->list_item, s);
 				fb = readValueF(p->list_item, s);
-				
+			//	printf("tc: %.5f, %.5f\n", fa, fb);
+				checkTexBounds(fa, fb);
 				VEC_INC(&pc->texcoords);
 				VEC_TAIL(&pc->texcoords).x = fa;
 				VEC_TAIL(&pc->texcoords).y = fb;
 				
-				VEC_PUSH(&pc->indicesTex, VEC_LEN(&pc->texcoords)-1);
+				VEC_PUSH(&pc->indicesTex, VEC_LEN(&pc->texcoords) - 1);
 				
 				
 				*s = s_save;
@@ -581,6 +625,8 @@ static void parseFaces(PLYContents* pc, ply_elem* e, char** s) {
 		
 
 	}
+	
+
 	
 }
 

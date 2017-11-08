@@ -92,6 +92,7 @@ int readPNG2(char* path, BitmapRGBA8* bmp) {
 	png_byte sig[8];
 	png_bytep* rowPtrs;
 	int i;
+	png_byte colorType;
 	
 	f = fopen(path, "rb");
 	if(!f) {
@@ -145,6 +146,11 @@ int readPNG2(char* path, BitmapRGBA8* bmp) {
 
 	bmp->width = png_get_image_width(readStruct, infoStruct);
 	bmp->height = png_get_image_height(readStruct, infoStruct);
+	
+	colorType = png_get_color_type(readStruct, infoStruct);
+	if (colorType == PNG_COLOR_TYPE_RGB) {
+		png_set_add_alpha(readStruct, 0xff, PNG_FILLER_AFTER);
+	}
 	
 	png_read_update_info(readStruct, infoStruct);
 	

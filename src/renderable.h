@@ -3,6 +3,7 @@
 
 #include "ds.h"
 
+#include "texture.h"
 #include "plyloader.h"
 
 
@@ -23,6 +24,10 @@ typedef struct Renderable {
 	
 	GLuint vbo;
 	GLuint vao;
+	
+	char* texturePath;
+	Texture* tex;
+	GLuint tex_ul;
 	
 	char* shaderPath;
 	ShaderProgram* prog;

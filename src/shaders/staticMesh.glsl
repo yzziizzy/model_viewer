@@ -36,7 +36,7 @@ in vec2 vs_tex;
 
 // fragment shader
 uniform vec4 color;
-
+uniform sampler2D tex; 
 
 layout(location = 0) out vec4 out_Color;
 layout(location = 1) out vec4 out_Normal;
@@ -44,8 +44,10 @@ layout(location = 1) out vec4 out_Normal;
 
 
 void main(void) {
+	vec2 tc = vs_tex.xy;
 	
-	out_Color = vec4(vs_tex.xy / 65536, 0, 1); //vs_norm;
+	out_Color = vec4(texture(tex, vec2(tc.x, 1-tc.y)).xyz, 1); //vs_norm;
+	//out_Color = vec4(tc.x, 0, 0, 1); //vs_norm;
 	out_Normal = normalize(vec4(0.5, 0.5, 0.5, 1)); //vs_norm;
 //	out_Lighting = vec4(0.5, 0.5, 1, 1);
 }

@@ -56,6 +56,7 @@ Renderable* renderable_Create(GLuint type, char* shaderPath, VAOConfig* vaoOpts,
 		r->model_ul = glGetUniformLocation(r->prog->id, "mModel");
 		r->view_ul = glGetUniformLocation(r->prog->id, "mView");
 		r->proj_ul = glGetUniformLocation(r->prog->id, "mProj");
+		r->tex_ul = glGetUniformLocation(r->prog->id, "tex");
 		glexit("Renderable matrix uniforms");
 	}
 	
@@ -98,8 +99,15 @@ void renderable_Draw(Renderable* r, Matrix* view, Matrix* proj) {
 	mScale3f(r->scale, r->scale, r->scale, &model);
 	mTransv(&r->pos, &model);
 	
+	glActiveTexture(GL_TEXTURE0 + 5);
+	glBindTexture(GL_TEXTURE_2D, r->tex->tex_id);
+	
+	
 	glUseProgram(r->prog->id);
 
+	
+	glUniform1i(r->tex_ul, 5);
+	
 	glUniformMatrix4fv(r->model_ul, 1, GL_FALSE, &model.m);
 	glUniformMatrix4fv(r->view_ul, 1, GL_FALSE, &view->m);
 	glUniformMatrix4fv(r->proj_ul, 1, GL_FALSE, &proj->m);
@@ -117,23 +125,34 @@ void renderable_Draw(Renderable* r, Matrix* view, Matrix* proj) {
 }
 
 
+int Renderable_applyTexturePath(Renderable* r, char* path) {
+	
+	r->tex = loadBitmapTexture(path);
+	if(!r->tex) return 1;
+	
+	r->texturePath = path;
+	
+	return 0;
+}
+
 
 
 struct RenderableOBJVertex {
 	Vector v, n;
 	struct {
-		unsigned short u, v;
+		float u, v;
 	} t;
 };
 
 
 Renderable* renderable_FromPLY(PLYContents* pc) {
 	int i;
+	Renderable* r;
 	VAOConfig opts[] = {
 		// per vertex
 		{3, GL_FLOAT}, // position
 		{3, GL_FLOAT}, // normal
-		{2, GL_UNSIGNED_SHORT, GL_TRUE}, // tex
+		{2, GL_FLOAT}, // tex
 		
 		{0, 0}
 	};
@@ -154,8 +173,8 @@ Renderable* renderable_FromPLY(PLYContents* pc) {
 		} 
 		
 		vCopy(&VEC_ITEM(&pc->vertices, q), &vertices[i].v);
-		vertices[i].t.u = 65535 / VEC_ITEM(&pc->texcoords, r).x;
-		vertices[i].t.v = 65535 / VEC_ITEM(&pc->texcoords, r).y;
+		vertices[i].t.u = VEC_ITEM(&pc->texcoords, r).x;
+		vertices[i].t.v = VEC_ITEM(&pc->texcoords, r).y;
 		
 		vCopy(&null, &vertices[i].n);
 		
@@ -169,12 +188,17 @@ Renderable* renderable_FromPLY(PLYContents* pc) {
 		//printf("texcoord: [%f, %f] -> [%d, %d]\n",obj->faces[i].t.x, obj->faces[i].t.y, vertices[i].t.u,vertices[i].t.v );
 	}
 	
-	return renderable_Create(
+	r = renderable_Create(
 		GL_TRIANGLES,
 		"staticMesh",
 		opts,
 		vertices,
 		VEC_LEN(&pc->faces));
+	
+	printf("tex path: '%s'\n", pc->texPath);
+	if(pc->texPath) Renderable_applyTexturePath(r, pc->texPath);
+	
+	return r;
 }
 
 
