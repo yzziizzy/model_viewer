@@ -39,7 +39,7 @@ TexArray* loadTexArray(char** files);
 
 
 
-
+void Texture_Release(Texture* t); 
 
 
 #endif // __texture_h__

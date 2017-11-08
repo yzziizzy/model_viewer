@@ -47,7 +47,7 @@ void main(void) {
 	vec2 tc = vs_tex.xy;
 	
 	out_Color = vec4(texture(tex, vec2(tc.x, 1-tc.y)).xyz, 1); //vs_norm;
-	//out_Color = vec4(tc.x, 0, 0, 1); //vs_norm;
+	//out_Color = vec4(tc.xy, 1, 1); //vs_norm;
 	out_Normal = normalize(vec4(0.5, 0.5, 0.5, 1)); //vs_norm;
 //	out_Lighting = vec4(0.5, 0.5, 1, 1);
 }

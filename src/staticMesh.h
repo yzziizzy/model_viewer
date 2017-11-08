@@ -5,12 +5,13 @@
 
 #include "hash.h"
 #include "renderable.h"
+#include "bbox.h"
 
 
 typedef struct StaticMeshVertex {
 	Vector v, n;
 	struct {
-		unsigned short u, v;
+		float u, v;
 	} t;
 } StaticMeshVertex;
 
@@ -26,6 +27,13 @@ typedef struct StaticMesh {
 	VEC(uint32_t) vertexIndices;
 	VEC(uint32_t) normalIndices;
 	VEC(uint32_t) textureIndices;
+	
+	char hasNormals;
+	char hasTexCoords;
+	
+	char* texPath;
+	Texture* texture;
+	
 	//int vertexCnt;
 	int faceCnt;
 	//int indexCnt; // = faceCnt * 3
@@ -40,6 +48,26 @@ typedef struct StaticMesh {
 	// vertex-vertex adj
 	// vertex-tri adj
 	// edge-edge adj
+	
+	
+	// stats
+	Vector aabbMin, aabbMax;
+	
+	// vertex indices
+	struct {
+		uint32_t p_x, m_x;
+		uint32_t p_y, m_y;
+		uint32_t p_z, m_z;
+	} extremes;
+
+	
+	Vector aabbDimensions;
+	Vector aabbCenter;
+	Vector meanCenter;
+	
+	
+	// rendering stuff
+	BoundingBoxVisual bbox;
 	
 	Renderable* solid;
 	Renderable* wireframe;
@@ -68,6 +96,9 @@ void staticMesh_RegenMeta(StaticMesh* sm);
 void initStaticMeshes();
 StaticMesh* StaticMeshFromOBJ(OBJContents* obj);
 StaticMesh* StaticMesh_LoadOBJ(char* path);
+StaticMesh* staticMesh_FromPLY(PLYContents* pc);
+
+void StaticMesh_CalcStats(StaticMesh* sm);
 
 void drawStaticMesh(StaticMesh* m, Matrix* view, Matrix* proj);
 

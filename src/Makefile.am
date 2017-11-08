@@ -12,6 +12,7 @@ glmv_SOURCES = main.c \
 	objloader.c \
 	plyloader.c \
 	staticMesh.c \
+	bbox.c \
 	renderable.c \
 	uniformBuffer.c \
 	timing.c \

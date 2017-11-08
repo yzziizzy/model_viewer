@@ -67,8 +67,8 @@ typedef struct {
 	VEC(Vector) normals; // NYI
 	VEC(Vector) texcoords;
 	
-	VEC(int) faces;
-	VEC(int) indicesTex;
+	VEC(uint32_t) faces;
+	VEC(uint32_t) indicesTex;
 	
 	// parsing info
 	

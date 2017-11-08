@@ -414,7 +414,9 @@ void initGame(XStuff* xs, GameState* gs) {
 
 	
 	PLYContents* pc = PLYContents_loadPath("/home/izzy/3dimages/things/rock_2/model_dense_mesh_refine_texture.ply");
+	testmesh = staticMesh_FromPLY(pc);
 	printf("PLY loaded\n");
+	
 	
 	printf("vertices %d\n", VEC_LEN(&pc->vertices));
 	printf("faces %d\n", VEC_LEN(&pc->faces));
@@ -423,8 +425,9 @@ void initGame(XStuff* xs, GameState* gs) {
 	printf("PLY renderable created\n");
 	//int axisindex = axes_Add(10, NULL);
 	
+	glLineWidth(2);
 	
-	testmesh = staticMesh_LoadOBJ("assets/models/gazebo.obj");
+//	testmesh = staticMesh_LoadOBJ("assets/models/gazebo.obj");
 	staticMesh_RegenMeta(testmesh);
 
 	char tmpbuf[200];
@@ -826,9 +829,9 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	c2.x = 300; //cursorp.x;
 	c2.y = 300; //cursorp.z;
 	
-gs->renderable-> scale = 1;
-	renderable_Draw(gs->renderable, msGetTop(&gs->view), msGetTop(&gs->proj));
- //	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
+	gs->renderable-> scale = 1;
+	//renderable_Draw(gs->renderable, msGetTop(&gs->view), msGetTop(&gs->proj));
+ 	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

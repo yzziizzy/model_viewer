@@ -26,7 +26,10 @@ struct ShaderBuf {
 };
  
 
-
+void ShaderProgram_Release(ShaderProgram* t) {
+	printf("NYI: ShaderProgram_Release(), %s:%d\n", __FILE__, __LINE__);
+	
+}
 
 void printLogOnFail(id) {
 	

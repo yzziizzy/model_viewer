@@ -32,6 +32,7 @@ struct sourceFragment* preloadFile(char* basePath, char* filename);
 Shader* preloadShader(char* basePath, char* filename);
 int newTopLevel(char* file);
 
+void ShaderProgram_Release(ShaderProgram* t);
 
 #endif // __EACSMB_SHADER_H__
 

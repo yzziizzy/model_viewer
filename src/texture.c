@@ -326,3 +326,8 @@ TexArray* loadTexArray(char** files) {
 	return ta;
 }
 
+
+void Texture_Release(Texture* t) {
+	printf("NYI: Texture_Release(), %s:%d\n", __FILE__, __LINE__);
+	
+}

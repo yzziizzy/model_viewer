@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 
 #include <GL/glew.h>
 #include <GL/glx.h>
@@ -24,7 +25,7 @@ struct SolidVertex {
 	Vector pos;
 	Vector face_normal;
 	struct {
-		unsigned short u, v;
+		float u, v;
 	} texcoords;
 };
 
@@ -54,10 +55,15 @@ static void generateSolid(StaticMesh* sm) {
 		b = VEC_DATA(&sm->vertices) + VEC_DATA(&sm->vertexIndices)[i+1];
 		c = VEC_DATA(&sm->vertices) + VEC_DATA(&sm->vertexIndices)[i+2];
 
-		an = VEC_DATA(&sm->normals) + VEC_DATA(&sm->normalIndices)[i];
-		bn = VEC_DATA(&sm->normals) + VEC_DATA(&sm->normalIndices)[i+1];
-		cn = VEC_DATA(&sm->normals) + VEC_DATA(&sm->normalIndices)[i+2];
-
+		if(sm->hasNormals) {
+			an = VEC_DATA(&sm->normals) + VEC_DATA(&sm->normalIndices)[i];
+			bn = VEC_DATA(&sm->normals) + VEC_DATA(&sm->normalIndices)[i+1];
+			cn = VEC_DATA(&sm->normals) + VEC_DATA(&sm->normalIndices)[i+2];
+		}
+		else { // use face normals for now
+			vTriFaceNormal(a, b, c, &norm);
+			an = bn = cn = &norm;
+		}
 		o = faces + i;
 		
 		// calculate the face normal
@@ -73,12 +79,12 @@ static void generateSolid(StaticMesh* sm) {
 		vCopy(bn, &(o+1)->face_normal);
 		vCopy(cn, &(o+2)->face_normal);
 		
-		o->texcoords.u = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i]].x * 65536;
-		o->texcoords.v = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i]].y * 65536;
-		(o+1)->texcoords.u = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i+1]].x * 65536;
-		(o+1)->texcoords.v = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i+1]].y * 65536;
-		(o+2)->texcoords.u = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i+2]].x * 65536;
-		(o+2)->texcoords.v = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i+2]].y * 65536;
+		o->texcoords.u = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i]].x;
+		o->texcoords.v = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i]].y;
+		(o+1)->texcoords.u = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i+1]].x;
+		(o+1)->texcoords.v = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i+1]].y;
+		(o+2)->texcoords.u = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i+2]].x;
+		(o+2)->texcoords.v = VEC_DATA(&sm->texcoords)[VEC_DATA(&sm->textureIndices)[i+2]].y;
 	}
 	
 	
@@ -86,11 +92,15 @@ static void generateSolid(StaticMesh* sm) {
 		// per vertex
 		{3, GL_FLOAT}, // position
 		{3, GL_FLOAT}, // face_normal
-		{2, GL_UNSIGNED_SHORT, GL_TRUE}, // tex
+		{2, GL_FLOAT}, // tex
 		{0, 0}
 	};
 	
 	sm->solid = renderable_Create(GL_TRIANGLES, "staticMesh", opts, faces, face_cnt * 3);
+	
+	if(sm->texPath) {
+		Renderable_applyTexturePath(sm->solid, sm->texPath);
+	}
 	
 	// set status flag
 }
@@ -206,13 +216,28 @@ static void generatePoints(StaticMesh* sm) {
 }
 
 
+void generateBBox(StaticMesh* sm) {
+	
+	BoundingBoxVisual_update(
+		&sm->bbox, 
+		&sm->aabbMin,
+		&sm->aabbMax
+	);
+	
+}
+
+
 
 
 void staticMesh_RegenMeta(StaticMesh* sm) {
 	
+	StaticMesh_CalcStats(sm);
+	
 	generateSolid(sm);
 //	generateWireframe(sm);
 	generatePoints(sm);
+	
+	generateBBox(sm);
 	
 }
 
@@ -241,6 +266,31 @@ StaticMesh* staticMesh_Create() {
 	return sm;
 }
 
+
+
+// hacky for now
+StaticMesh* staticMesh_FromPLY(PLYContents* pc) {
+	int i;
+	Vector null = {0,0,0};
+	StaticMesh* sm;
+	
+	sm = staticMesh_Create();
+	
+	
+	VEC_COPY(&sm->vertices, &pc->vertices);
+	VEC_COPY(&sm->vertexIndices, &pc->faces);
+	
+	sm->hasTexCoords = 1;
+	VEC_COPY(&sm->texcoords, &pc->texcoords);
+	VEC_COPY(&sm->textureIndices, &pc->indicesTex);
+	
+	sm->hasNormals = 0;
+	
+	if(pc->texPath) sm->texPath = strdup(pc->texPath);
+	
+	
+	return sm;
+}
 
 
 // hacky for now, sloppily recreates index data
@@ -400,9 +450,57 @@ void drawStaticMesh(StaticMesh* m, Matrix* view, Matrix* proj) {
 	
 	m->solid->scale = 1;
 	renderable_Draw(m->solid, view, proj);
+	renderable_Draw(m->bbox.rend, view, proj);
 //	renderable_Draw(m->points, view, proj);
 }
 
 
-
+void StaticMesh_CalcStats(StaticMesh* sm) {
+	int i;
+	
+	// for calculating the average center point
+	struct { double x,y,z; } sums;
+	
+	
+	// for calculating the most extreme points
+	float px, py, pz, mx, my, mz;
+	px = py = pz = -FLT_MAX; 
+	mx = my = mz = FLT_MAX; 
+	
+	
+	for(i = 0; i < VEC_LEN(&sm->vertices); i++) {
+		Vector* v = &VEC_ITEM(&sm->vertices, i);
+		
+		if(v->x < mx) { mx = v->x; sm->extremes.m_x; }
+		if(v->x > px) { px = v->x; sm->extremes.p_x; }
+		if(v->y < my) { my = v->y; sm->extremes.m_y; }
+		if(v->y > py) { py = v->y; sm->extremes.p_y; }
+		if(v->z < mz) { mz = v->z; sm->extremes.m_z; }
+		if(v->z > pz) { pz = v->z; sm->extremes.p_z; }
+		
+		sums.x += v->x;
+		sums.y += v->y;
+		sums.z += v->z;
+	}
+	
+	
+	sm->aabbMin.x = mx;
+	sm->aabbMin.y = my;
+	sm->aabbMin.z = mz;
+	sm->aabbMax.x = px;
+	sm->aabbMax.y = py;
+	sm->aabbMax.z = pz;
+	
+	sm->aabbDimensions.x = (px - mx);
+	sm->aabbDimensions.y = (py - my);
+	sm->aabbDimensions.z = (pz - mz);
+	sm->aabbCenter.x = (sm->aabbDimensions.x / 2) + mx;
+	sm->aabbCenter.y = (sm->aabbDimensions.y / 2) + my;
+	sm->aabbCenter.z = (sm->aabbDimensions.z / 2) + mz;
+	
+	sm->meanCenter.x = sums.x / VEC_LEN(&sm->vertices);
+	sm->meanCenter.y = sums.y / VEC_LEN(&sm->vertices);
+	sm->meanCenter.z = sums.z / VEC_LEN(&sm->vertices);
+	
+}
 

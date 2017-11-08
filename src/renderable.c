@@ -79,7 +79,7 @@ Renderable* renderable_Create(GLuint type, char* shaderPath, VAOConfig* vaoOpts,
 		
 		offset += getVAOItemSize(&vaoOpts[i]);
 	}
-	
+	printf("stride: %d\n", stride);
 	glBufferData(GL_ARRAY_BUFFER, dataCnt * stride, data, GL_STATIC_DRAW);
 	glexit("Renderable buffer data");
 
@@ -90,21 +90,44 @@ Renderable* renderable_Create(GLuint type, char* shaderPath, VAOConfig* vaoOpts,
 	return r;
 }
 
+void Renderable_Destroy(Renderable* r) {
+	if(r->data) free(r->data);
+	if(r->texturePath) free(r->texturePath);
+	if(r->shaderPath) free(r->shaderPath);
+	
+	if(r->tex) Texture_Release(r->tex);
+	if(r->prog) ShaderProgram_Release(r->prog);
+};
+
+void Renderable_Free(Renderable* r) {
+	if(!r) return;
+	Renderable_Destroy(r);
+	free(r);
+};
+
 void renderable_Draw(Renderable* r, Matrix* view, Matrix* proj) {
 	
 	Matrix model;
+	
+	if(r->scale == 0) {
+		printf("Renderable with zero scale. Fixing.\n");
+		r->scale = 1;
+	}
 	
 	//mFastMul(view, proj, &mvp);
 	mIdent(&model);
 	mScale3f(r->scale, r->scale, r->scale, &model);
 	mTransv(&r->pos, &model);
 	
-	glActiveTexture(GL_TEXTURE0 + 5);
-	glBindTexture(GL_TEXTURE_2D, r->tex->tex_id);
-	
-	
 	glUseProgram(r->prog->id);
 
+	if(r->tex) {
+		glActiveTexture(GL_TEXTURE0 + 5);
+		glBindTexture(GL_TEXTURE_2D, r->tex->tex_id);
+		
+		glUniform1i(r->tex_ul, 5);
+	}
+	
 	
 	glUniform1i(r->tex_ul, 5);
 	
@@ -118,7 +141,6 @@ void renderable_Draw(Renderable* r, Matrix* view, Matrix* proj) {
 	glexit("Renderable vbo");
 	
 	//printf("vertices %d\n", r->dataCnt);
-	
 	glDrawArrays(r->type, 0, r->dataCnt);
 	glexit("Renderable draw");
 	
