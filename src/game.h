@@ -6,6 +6,7 @@
 #include "uniformBuffer.h"
 #include "fbo.h"
 #include "timing.h"
+#include "staticMesh.h"
 //#include "scene.h"
 
 
@@ -99,7 +100,7 @@ typedef struct GameState {
 	Vector eyeUp;
 	Vector eyeRight;
 	
-
+	StaticMesh* activeMesh;
 
 	Vector2 mouseDownPos;
 	

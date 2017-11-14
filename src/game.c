@@ -49,7 +49,6 @@ float font_smooth_limit = 0.5;
 // temp shit
 GUIText* gt;
 
-StaticMesh* testmesh;
 
 GLuint fsQuadVAO, fsQuadVBO;
 ShaderProgram* shadingProg;
@@ -414,7 +413,7 @@ void initGame(XStuff* xs, GameState* gs) {
 
 	
 	PLYContents* pc = PLYContents_loadPath("/home/izzy/3dimages/things/rock_2/model_dense_mesh_refine_texture.ply");
-	testmesh = staticMesh_FromPLY(pc);
+	gs->activeMesh = staticMesh_FromPLY(pc);
 	printf("PLY loaded\n");
 	
 	
@@ -428,14 +427,14 @@ void initGame(XStuff* xs, GameState* gs) {
 	glLineWidth(2);
 	
 //	testmesh = staticMesh_LoadOBJ("assets/models/gazebo.obj");
-	staticMesh_RegenMeta(testmesh);
+	staticMesh_RegenMeta(gs->activeMesh);
 
 	char tmpbuf[200];
 	
-	snprintf(tmpbuf, 200, "vertices: %d", VEC_LEN(&testmesh->vertices));
+	snprintf(tmpbuf, 200, "vertices: %d", VEC_LEN(&gs->activeMesh->vertices));
 	guiTextNew(tmpbuf, &(Vector){10.0,1.0,0.0}, 6.0f, "Arial");
 
-	snprintf(tmpbuf, 200, "faces: %d", VEC_LEN(&testmesh->vertexIndices) / 3);
+	snprintf(tmpbuf, 200, "faces: %d", VEC_LEN(&gs->activeMesh->vertexIndices) / 3);
 	guiTextNew(tmpbuf, &(Vector){10.0,2.0,0.0}, 6.0f, "Arial");
 
 	
@@ -553,6 +552,14 @@ void handleInput(GameState* gs, InputState* is) {
 	float mouseZoom = gs->settings.mouseZoom * te;
 
 	if(is->keyState[54] & IS_KEYDOWN) {
+		exit(0);
+	}
+	
+	// [ and ] to scale model
+	if(is->keyState[34] & IS_KEYDOWN) {
+		StaticMesh_setScale(gs->activeMesh, gs->activeMesh->scale * 1.1);
+	}
+	if(is->keyState[35] & IS_KEYDOWN) {
 		exit(0);
 	}
 	
@@ -831,7 +838,7 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	
 	gs->renderable-> scale = 1;
 	//renderable_Draw(gs->renderable, msGetTop(&gs->view), msGetTop(&gs->proj));
- 	drawStaticMesh(testmesh, msGetTop(&gs->view), msGetTop(&gs->proj));
+ 	drawStaticMesh(gs->activeMesh, msGetTop(&gs->view), msGetTop(&gs->proj));
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

@@ -69,6 +69,8 @@ typedef struct StaticMesh {
 	// rendering stuff
 	BoundingBoxVisual bbox;
 	
+	AxesVisual av;
+	
 	Renderable* solid;
 	Renderable* wireframe;
 	Renderable* points;
@@ -92,6 +94,7 @@ StaticMesh* staticMesh_Create();
 void staticMesh_Destroy(StaticMesh** sm);
 
 void staticMesh_RegenMeta(StaticMesh* sm);
+float StaticMesh_setScale(StaticMesh* sm, float newscale);
 
 void initStaticMeshes();
 StaticMesh* StaticMeshFromOBJ(OBJContents* obj);

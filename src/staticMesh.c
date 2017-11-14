@@ -32,6 +32,21 @@ struct SolidVertex {
 static HASH_FN_FOR_TYPE(vector_hash_fn, Vector)
 
 
+
+float StaticMesh_setScale(StaticMesh* sm, float newscale) {
+	
+	sm->scale = newscale;
+	
+	sm->bbox.rend->scale = newscale;
+	sm->bbox.rendAxes->scale = newscale;
+	sm->solid->scale = newscale;
+	sm->wireframe->scale = newscale;
+	sm->points->scale = newscale;
+	
+	return newscale;
+}
+
+
 static void generateSolid(StaticMesh* sm) {
 	
 	int i, face_cnt;
@@ -224,6 +239,8 @@ void generateBBox(StaticMesh* sm) {
 		&sm->aabbMax
 	);
 	
+	Vector v = {5,5,5};
+	AxesVisual_init(&sm->av, &v); 
 }
 
 
@@ -451,6 +468,11 @@ void drawStaticMesh(StaticMesh* m, Matrix* view, Matrix* proj) {
 	m->solid->scale = 1;
 	renderable_Draw(m->solid, view, proj);
 	renderable_Draw(m->bbox.rend, view, proj);
+	renderable_Draw(m->bbox.rendAxes, view, proj);
+	
+	
+	AxesVisual_render(&m->av, view, proj);
+	
 //	renderable_Draw(m->points, view, proj);
 }
 
