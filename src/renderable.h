@@ -46,11 +46,24 @@ typedef struct Renderable {
 } Renderable;
 
 
+
+
+
+
+
+
+
+
+
 Renderable* renderable_FromOBJ(OBJContents* obj);
 void renderable_Draw(Renderable* r, Matrix* view, Matrix* proj);
 Renderable* renderable_Create(GLuint type, char* shaderPath, VAOConfig* vaoOpts, void* data, int dataCnt);
 void Renderable_Destroy(Renderable* r);
 void Renderable_Free(Renderable* r);
+
+
+
+
 
 
 #endif // __EACSMB_RENDERABLE_H__

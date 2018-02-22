@@ -1,4 +1,5 @@
-a 
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -15,7 +16,7 @@ a
 #include "c3dlas/c3dlas.h"
 
 #include "utilities.h"
-#include "objloader.h"t
+#include "objloader.h"
 #include "shader.h"
 #include "renderable.h"
 

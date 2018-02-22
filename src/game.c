@@ -412,7 +412,7 @@ void initGame(XStuff* xs, GameState* gs) {
 	//axes_Init();
 
 	
-	PLYContents* pc = PLYContents_loadPath("/home/izzy/3dimages/things/rock_2/model_dense_mesh_refine_texture.ply");
+	PLYContents* pc = PLYContents_loadPath("/home/izzy/3dimages/things/artifact/model_dense_mesh_refine_texture.ply");
 	gs->activeMesh = staticMesh_FromPLY(pc);
 	printf("PLY loaded\n");
 	
