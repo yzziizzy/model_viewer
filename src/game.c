@@ -783,7 +783,7 @@ void updateView(XStuff* xs, GameState* gs, InputState* is) {
 	
 	// y-up to z-up rotation
 	msRot3f(1, 0, 0, F_PI_2, &gs->view);
-	msScale3f(1, 1, -1, &gs->view);
+	// SFM models come upside down //msScale3f(1, 1, -1, &gs->view);
 	
 	
 	
@@ -835,8 +835,13 @@ void renderFrame(XStuff* xs, GameState* gs, InputState* is) {
 	
 	c2.x = 300; //cursorp.x;
 	c2.y = 300; //cursorp.z;
-	
-	gs->renderable-> scale = 1;
+	if(gs->renderable) {
+		//printf("yes renderable\n");
+		//gs->renderable->scale = 1; // this segfaults, even with the guard
+	}
+	else {
+		printf("no renderable \n");
+	}
 	//renderable_Draw(gs->renderable, msGetTop(&gs->view), msGetTop(&gs->proj));
  	drawStaticMesh(gs->activeMesh, msGetTop(&gs->view), msGetTop(&gs->proj));
 
