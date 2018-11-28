@@ -891,20 +891,20 @@ void FreeFont(TextRes* res) {
 };
 	
 	
-// super nifty site:
-// http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-int nextPOT(int in) {
+//// super nifty site:
+//// http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+//int nextPOT(int in) {
 	
-	in--;
-	in |= in >> 1;
-	in |= in >> 2;
-	in |= in >> 4;
-	in |= in >> 8;
-	in |= in >> 16;
-	in++;
+	//in--;
+	//in |= in >> 1;
+	//in |= in >> 2;
+	//in |= in >> 4;
+	//in |= in >> 8;
+	//in |= in >> 16;
+	//in++;
 	
-	return in;
-}
+	//return in;
+//}
 
 
 void updateText(TextRenderInfo* tri, const char* str, int len, unsigned int* colors) {

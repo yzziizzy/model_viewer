@@ -31,6 +31,8 @@
 #include "renderable.h"
 #include "game.h"
 #include "plyloader.h"
+
+#include "collada.h"
 // #include "scene.h"
 
 // #include "axes.h"
@@ -271,6 +273,11 @@ void initGame(XStuff* xs, GameState* gs) {
 	json_gl_init_lookup();
 	
 	glerr("left over error on game init");
+	
+	// HACK
+	colladaLoadFile("assets/models/streetlight.dae");
+	printf("normal debug early exit\n");
+	exit(1);
 	
 	gs->hasMoved = 1;
 	gs->lastSelectionFrame = 0;

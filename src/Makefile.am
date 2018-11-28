@@ -4,6 +4,8 @@ bin_PROGRAMS = glmv
 
 glmv_SOURCES = main.c \
 	hash.c \
+	collada.c \
+	fxml/fxml.c \
 	ds.c \
 	MurmurHash3.c \
 	dumpImage.c \
