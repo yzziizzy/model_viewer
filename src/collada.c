@@ -12,7 +12,7 @@
 
 
 
-void parseFloatArray(ColladaSource* cs, FXMLTag* tag) {
+float* parseFloatArray(FXMLTag* tag, int* cnt) {
 	
 	char* e, *s, *raw;
 	size_t count, i;
@@ -21,7 +21,8 @@ void parseFloatArray(ColladaSource* cs, FXMLTag* tag) {
 	count = fxmlGetAttrInt(tag, "count");
 	if(!count) {
 		fprintf(stderr, "Collada: empty float array.\n");
-		return;
+		*cnt = 0;
+		return NULL;
 	}
 	
 	data = d = calloc(1, count * sizeof(*data));
@@ -46,9 +47,8 @@ void parseFloatArray(ColladaSource* cs, FXMLTag* tag) {
 	
 	free(raw);
 	
-	cs->count = i;
-	cs->floats = data;
-	cs->type = COLLADA_FLOATS;
+	*cnt = i;
+	return data;
 }
 
 
@@ -133,8 +133,109 @@ static ColladaMesh* parseMesh(FXMLTag* meshtag) {
 
 
 
+static void parseGeomSourceTag(ColladaMesh* cm, FXMLTag* x_src) {
+	ColladaGeomSource* src;
+	FXMLTag* x_fa, *x_tc, *x_acc, *x_p;
+	
+	src = calloc(1, sizeof(*src));
+	
+	src->id = fxmlGetAttr(x_src, "id");
+	
+	// float data
+	x_fa = fxmlTagFindFirstChild(x_src, "float_array");
+	if(!x_fa) {
+		printf("float aray not found in mesh source\n");
+		return;
+	}
+	
+	parseFloatArray(x_fa, &src->count);
+	
+	
+	
+	x_tc = fxmlTagFindFirstChild(x_src, "technique_common");
+	if(!x_tc) {
+		fprintf(stderr, "Collada: no technique_common tag found in source tag.\n");
+		return;
+	}
+	x_acc = fxmlTagFindFirstChild(x_acc, "accessor");
+	if(!x_acc) {
+		fprintf(stderr, "Collada: no accessor tag found in technique_common tag.\n");
+		return;
+	}
+	
+	src->stride = fxmlGetAttrInt(x_acc, "stride");
+	
+	// find the storage order
+	x_p = fxmlTagGetFirstChild(x_acc);
+	for(int i = 0; x_p && i < 4; i++) {
+		
+		char* p = fxmlGetAttr(x_p, "param");
+		src->access[i] = p[0];
+		free(p);
+		
+		x_p = fxmlTagNextSibling(x_p, 1);
+	}
+	
+	
+	HT_set(&cm->sources, src->id, src);
+}
+
 static void parseGeomTag(ColladaFile* cf, FXMLTag* geom) {
 	printf("parsing geometry\n");
+	
+	ColladaGeometry* g;
+	g = calloc(1, sizeof(*g));
+	HT_init(&g->meshes, 2);
+	
+	
+	g->name = fxmlGetAttr(geom, "name");
+	g->id = fxmlGetAttr(geom, "id");
+	
+	FXMLTag* x_mesh = fxmlTagFindFirstChild(geom, "mesh");
+	if(!x_mesh) {
+		printf("No mesh found in geometry\n");
+		return;
+	}
+	
+	
+	// loop over meshes
+	while(x_mesh) {
+		ColladaMesh* cm;
+		cm = calloc(1, sizeof(*cm));
+		HT_init(&cm->sources, 2);
+		
+		char has_vertices = 0;
+		
+		FXMLTag* tag = fxmlTagGetFirstChild(x_mesh);
+		
+		while(tag) {
+			if(0 == strncmp("source", tag->name, tag->name_len)) {
+				parseGeomSourceTag(cm, tag);
+			}
+			else if(0 == strncmp("vertices", tag->name, tag->name_len)) {
+				printf("NIH geom/mesh/vertices\n");
+				
+				has_vertices = 1;
+				
+				
+				
+			}
+			else if(0 == strncmp("triangles", tag->name, tag->name_len)) {
+				printf("NIH geom/mesh/triangles\n");
+			}
+			
+			tag = fxmlTagNextSibling(tag, 1);
+		}
+		
+		if(!has_vertices) {
+			printf("mesh lacks vertices\n");
+		}
+	
+		HT_set(&g->meshes, cm->id, cm);
+	}
+	
+	
+	HT_set(&cf->geometries, g->id, g);
 }
 
 
