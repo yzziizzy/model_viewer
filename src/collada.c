@@ -28,7 +28,7 @@ float* parseFloatArray(FXMLTag* tag, int* cnt) {
 	data = d = calloc(1, count * sizeof(*data));
 	//CHECK_OOM(data);
 	
-	//raw = s = fxmlGetTextContents(tag);
+	raw = s = fxmlGetTextContents(tag, NULL);
 	
 	i = 0;
 	while(*s) {
@@ -51,6 +51,57 @@ float* parseFloatArray(FXMLTag* tag, int* cnt) {
 	return data;
 }
 
+
+void parseTriangles(FXMLTag* tag) {
+	FXMLTag* x_p, *x_in;
+	char* e, *s, *raw;
+	size_t count, i;
+	float* data, *d;
+	
+	count = fxmlGetAttrInt(tag, "count");
+	if(!count) {
+		fprintf(stderr, "Collada: empty float array.\n");
+		return NULL;
+	}
+	
+	
+	// find the storage configuration
+	x_in = fxmlTagFindFirstChild(tag, "input");
+	for(int i = 0; x_in; i++) {
+		
+// 		char* p = fxmlGetAttr(x_p, "param");
+// 		src->access[i] = p[0];
+// 		free(p);
+		
+		x_in = fxmlTagFindNextSibling(x_p, "input", 1);
+	}
+	
+	
+	// grab the polygon data
+	data = d = calloc(1, count * sizeof(*data));
+	
+	x_p = fxmlTagFindFirstChild(tag, "p");
+	raw = s = fxmlGetTextContents(x_p, NULL);
+	
+	i = 0;
+	while(*s) {
+		*d = strtod(s, &e);
+		if(s == e) {
+			if(count != i) {
+				fprintf(stderr, "Collada: float_array count attribute disagrees with actual data count.\n");
+			}
+			break;
+		}
+		
+		s = e;
+		d++;
+		i++;
+	}
+	
+	free(raw);
+	
+	
+}
 
 /*
 	<source id="color_source" name="Colors">
@@ -157,7 +208,7 @@ static void parseGeomSourceTag(ColladaMesh* cm, FXMLTag* x_src) {
 		fprintf(stderr, "Collada: no technique_common tag found in source tag.\n");
 		return;
 	}
-	x_acc = fxmlTagFindFirstChild(x_acc, "accessor");
+	x_acc = fxmlTagFindFirstChild(x_tc, "accessor");
 	if(!x_acc) {
 		fprintf(stderr, "Collada: no accessor tag found in technique_common tag.\n");
 		return;
@@ -185,7 +236,6 @@ static void parseGeomTag(ColladaFile* cf, FXMLTag* geom) {
 	
 	ColladaGeometry* g;
 	g = calloc(1, sizeof(*g));
-	HT_init(&g->meshes, 2);
 	
 	
 	g->name = fxmlGetAttr(geom, "name");
@@ -197,14 +247,15 @@ static void parseGeomTag(ColladaFile* cf, FXMLTag* geom) {
 		return;
 	}
 	
-	
-	// loop over meshes
-	while(x_mesh) {
+	if(x_mesh) {
 		ColladaMesh* cm;
 		cm = calloc(1, sizeof(*cm));
 		HT_init(&cm->sources, 2);
 		
 		char has_vertices = 0;
+		
+		cm->id = fxmlGetAttr(x_mesh, "id");
+		
 		
 		FXMLTag* tag = fxmlTagGetFirstChild(x_mesh);
 		
@@ -231,7 +282,7 @@ static void parseGeomTag(ColladaFile* cf, FXMLTag* geom) {
 			printf("mesh lacks vertices\n");
 		}
 	
-		HT_set(&g->meshes, cm->id, cm);
+		g->mesh = cm;
 	}
 	
 	
@@ -251,6 +302,7 @@ void colladaLoadFile(char* path) {
 	ColladaFile* cf;
 	
 	cf = calloc(1, sizeof(*cf));
+	HT_init(&cf->geometries, 2);
 	
 	xml = fxmlLoadFile(path);
 	

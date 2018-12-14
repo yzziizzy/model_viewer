@@ -61,6 +61,10 @@ typedef struct {
 	char* id;
 	char* name;
 	
+	char* vertexSourceID;
+	char* normalSourceID;
+	char* texSourceID;
+	
 	HashTable sources;
 	
 } ColladaMesh;
@@ -89,7 +93,7 @@ typedef struct {
 	char* id;
 	
 	
-	HashTable meshes;
+	ColladaMesh* mesh;
 	
 } ColladaGeometry;
 
