@@ -25,8 +25,11 @@ library_geometries/geometry[id,name]
 			/input[semantic=VERTEX,NORMAL,TEXCOORD, source=#id, offset=<int>]
 			/vcount(text)
 			/p(text)
+library_animations/animation[id]
+	/source[id]
+	...
 library_visual_scenes/visual_scene/node[id, name]/matrix[sid=transform]
-
+	... to find mesh relative positioning
 */
 
 
