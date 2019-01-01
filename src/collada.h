@@ -64,15 +64,54 @@ typedef struct {
 	char* id;
 	char* name;
 	
+	char* vertexSourceID;
+	char* normalSourceID;
+	char* texSourceID;
+	
 	HashTable sources;
 	
 } ColladaMesh;
 
 
+typedef struct {
+	char* id;
+	
+	int type; // 0 = f, 1 = d, 2 = int
+	union {
+		float* f;
+		double* d;
+		int64_t* i64;
+	} data;
+	
+	int count;
+	int stride;
+	
+	char access[4];
+	
+	
+} ColladaGeomSource;
 
 typedef struct {
-	HashTable meshes;
+	char* name;
+	char* id;
+	
+	
+	ColladaMesh* mesh;
+	
+} ColladaGeometry;
+
+
+
+
+
+typedef struct {
+// 	HashTable meshes;
 	char upAxis;
+	
+	// for loading
+	HashTable geometries;
+	
+	
 } ColladaFile;
 
 

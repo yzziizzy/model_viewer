@@ -18,27 +18,32 @@ int HT_CStringCompareFn(void* a, void* b);
 
 
  
+void HT_init(HashTable* ht, int allocPOT) {
+	int pot, allocSz;
+		
+	pot = allocPOT < 4 ? 4 : allocPOT;
+	
+	ht->hashFn = &HT_CStringHashFn;
+	ht->keyCompareFn = &HT_CStringCompareFn;
+	ht->fill = 0;
+	ht->alloc_size = 1 << pot;
+	ht->grow_ratio = 0.75f;
+	ht->shrink_ratio = 99.0f; // set greater than 1.0 to entirely disable
+	ht->buckets = calloc(1, sizeof(*ht->buckets) * ht->alloc_size);
+	if(!ht->buckets) {
+		free(ht);
+		return NULL;
+	}
+}
+
 HashTable* HT_create(int allocPOT) {
 	
-	int pot, allocSz;
 	HashTable* obj;
-	
-	pot = allocPOT < 4 ? 4 : allocPOT;
 	
 	obj = malloc(sizeof(*obj));
 	if(!obj) return NULL;
 	
-	obj->hashFn = &HT_CStringHashFn;
-	obj->keyCompareFn = &HT_CStringCompareFn;
-	obj->fill = 0;
-	obj->alloc_size = 1 << pot;
-	obj->grow_ratio = 0.75f;
-	obj->shrink_ratio = 99.0f; // set greater than 1.0 to entirely disable
-	obj->buckets = calloc(1, sizeof(*obj->buckets) * obj->alloc_size);
-	if(!obj->buckets) {
-		free(obj);
-		return NULL;
-	}
+	HT_init(obj, allocPOT);
 	
 	return obj;
 }

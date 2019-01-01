@@ -30,6 +30,7 @@ uint64_t HT_HashFn(void* key, size_t len);
 uint64_t HT_CStringHashFn(void* key);
 
 HashTable* HT_create(int allocPOT);
+void HT_init(HashTable* ht, int allocPOT);
 HashTable* HT_createCustom(int allocPOT, hashFn_t hashFn, keyCompareFn_t keyCompareFn);
 void HT_destroy(HashTable* obj, int free_values_too);
 int HT_resize(HashTable* obj, int newSize);
